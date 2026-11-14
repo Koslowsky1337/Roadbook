@@ -1198,7 +1198,9 @@ end
 -- wie im Addon Pastime. Die Zeppelinmeister (Orgrimmar, Undercity, Grom'gol) und die
 -- Schiffsmeister in Ratchet und Booty Bay stehen laut Spieldaten genau dort; die
 -- übrigen Anleger sind im Spiel gemessen.
--- { Karte, x, y, Karte, x, y, Fraktion (nil = alle), Art, Ort A, Ort B }
+-- Zeppeline und Schiffe muss man nicht „kennenlernen“ (anders als Flugpunkte): alle
+-- Linien der eigenen Fraktion zählen immer.
+-- { Karte, x, y, Karte, x, y, Fraktion (nil = alle), Art, Ort A, Ort B, nur A → B }
 ---------------------------------------------------------------------------
 local ZEP, BOAT = L["Zeppelin %s – %s"], L["Boat %s – %s"]
 local LINKS = {
@@ -1209,7 +1211,10 @@ local LINKS = {
     { 1413, 63.74, 38.50, 1434, 26.08, 73.35, nil, BOAT, "Ratchet", "Booty Bay" },
     { 1446, 67.57, 23.10, 2548, 79.38, 53.41, nil, BOAT, "Tanaris", L["Riverglades"] },
     { 1453, 23.22, 55.05, 1439, 30.79, 40.82, "Alliance", BOAT, "Stormwind", "Auberdine" },
-    { 1439, 32.30, 43.76, 1437, 4.83, 57.04, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"] },
+    -- Rundfahrt, nur in dieser Richtung: Auberdine → Menethil → Southshore → Auberdine
+    { 1439, 32.30, 43.76, 1437, 4.83, 57.04, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"], true },
+    { 1437, 4.83, 57.04, 1424, 50.68, 69.35, "Alliance", BOAT, L["Menethil Harbor"], "Southshore", true },
+    { 1424, 50.68, 69.35, 1439, 32.30, 43.76, "Alliance", BOAT, "Southshore", "Auberdine", true },
     { 1437, 5.21, 63.71, 1445, 71.28, 56.29, "Alliance", BOAT, L["Menethil Harbor"], "Theramore" },
     { 1438, 55.60, 96.50, 1439, 32.40, 39.80, nil, BOAT, "Rut'theran", "Auberdine" },
     { 2521, 65.69, 83.22, 1416, 12.30, 56.49, "Alliance", ZEP, L["Zephras Isle"], "Dalaran" },
@@ -1236,7 +1241,7 @@ local function links()
                 local am = { map = l[1], x = l[2], y = l[3] }
                 local bm = { map = l[4], x = l[5], y = l[6] }
                 table.insert(list, { a = a, b = b, name = name, am = am, bm = bm })
-                table.insert(list, { a = b, b = a, name = name, am = bm, bm = am })
+                if not l[11] then table.insert(list, { a = b, b = a, name = name, am = bm, bm = am }) end
             end
         end
     end

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Alliance round trip Auberdine → Menethil Harbor → Southshore → Auberdine added, in that direction only. Zeppelins and boats never need to be discovered: every line of your faction always counts.
 - Zeppelins and boats are now also used within one continent when they are faster than walking, for example Undercity – Grom'gol instead of crossing the Eastern Kingdoms on foot. New lines: Undercity ↔ Grom'gol, Rut'theran ↔ Auberdine.
 - Fixed: before you had opened a flight map, every flight point counted as known, so flights to places you had never visited could be recommended. Now Roadbook recommends flights on a continent only after you have opened a flight map there.
 - Tracker: while the way leads to a flight master or dock first, the distance shown is the distance to that point ("350 yd · then Westfall 37.4 50.7").

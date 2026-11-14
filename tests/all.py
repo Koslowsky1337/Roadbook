@@ -4,7 +4,7 @@ import os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ADDON = os.path.dirname(HERE)
 RUNS = [
-    ("scenario", "deDE", "Horde"), ("english", "enUS", "Horde"), ("screens", "deDE", "Horde"), ("screens", "enUS", "Horde"),
+    ("scenario", "deDE", "Horde"), ("english", "enUS", "Horde"), ("screens", "deDE", "Horde"), ("screens", "enUS", "Horde"), ("alliance", "deDE", "Alliance"),
 ] + [("check_locale.py", "-", "-")]       # Übersetzungen: vollständig, keine Reste, gleiche Platzhalter
 
 bad = 0

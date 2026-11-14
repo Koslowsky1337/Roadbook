@@ -806,6 +806,11 @@ PLAYER = { map = 1434, x = 0.32, y = 0.30 }
 fire("ZONE_CHANGED_NEW_AREA"); RunTimers()
 check(ns.travel == nil and TomTom.arrow.title == "Weit im Süden", "Nach der Fahrt zu Fuß zum Ziel: " .. tostring(TomTom.arrow and TomTom.arrow.title))
 ns.DeactivatePlan(); RunTimers()
+-- Zeppeline muss man nicht kennenlernen: auch ohne einen einzigen bekannten Flugpunkt
+local noTaxi = ns.C.taxi
+ns.C.taxi = {}; ns.C.taxiSeen = nil; ns.taxiVersion = ns.taxiVersion + 1
+check(select(3, ns.LegText(zFrom, zTo)) == "schiff", "Zeppelin zählt ohne bekannte Flugpunkte")
+ns.C.taxi = noTaxi; ns.taxiVersion = ns.taxiVersion + 1
 -- ohne je geöffnete Flugkarte gilt kein Flugpunkt als bekannt, auch wenn das Spiel ihn „entdeckt“ nennt
 local keepTaxi = ns.C.taxi
 ns.C.taxi = {}; ns.taxiVersion = ns.taxiVersion + 1
