@@ -65,14 +65,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 
 ## 5. Veröffentlichung
 
-- [ ] Screenshots für die CurseForge-Gallery: Plan laden (z. B. `/rb abgabe`), `/rb fotos` eingeben, acht Bilder abwarten, dann `/reload`. Danach Bescheid geben – der Zuschnitt läuft mit `media/crop_shots.py`. Vorher prüfen, dass im Plan, in den Notizen und in den Makros nichts steht, was nicht öffentlich werden soll. Die Bilder zeigen:
-  1. Reiter Pläne mit geladener Abgaberunde
-  2. Tracker unter der Minimap mit Flughinweis und TomTom-Pfeil
-  3. Chatzeile am Flugmeister („Flieg nach …“)
-  4. Fenster „Wegbeschreibung“
-  5. Reiter Notizen mit der Kurzanleitung
-  6. Makro-Bibliothek mit einem geänderten Makro
-  7. Importfenster
+- [ ] Screenshots für die CurseForge-Gallery: `/rb fotos` eingeben, sieben Bilder abwarten (etwa 15 Sekunden), dann `/reload`. Danach Bescheid geben – der Zuschnitt läuft mit `media/crop_shots.py`. Die Bilder zeigen nur Beispieldaten (Abgaberunde mit Zeppelin, Tracker, Wegbeschreibung, Kurzanleitung, Beispiel-Makros, Optionen, Import), nichts von dir.
 - [x] CurseForge-Projekt anlegen: Name **Roadbook**, Logo `media/logo.png`, Lizenz MIT, Kategorie Quests & Leveling (zusätzlich Map & Minimap), Spielversion **Forever**. Summary und Description: siehe unten.
 - [ ] Auf der Projektseite unter *Relations* **TomTom** und **QuestieDB** als *Required Dependency* eintragen bzw. prüfen (kommt aus `.pkgmeta`; falls nicht, von Hand eintragen).
 - [x] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.

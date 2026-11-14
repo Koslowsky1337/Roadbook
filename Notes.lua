@@ -113,6 +113,7 @@ end
 
 -- Abschnitte für die Liste
 function ns.GetNoteSections()
+    if ns.staging then return ns.staging.notes end
     local builtin, post, plans, mine, account = {}, {}, {}, {}, {}
     for _, n in ipairs(ns.BUILTIN_NOTES) do
         if not ns.IsPostNoteHidden(n) then table.insert(builtin, n) end

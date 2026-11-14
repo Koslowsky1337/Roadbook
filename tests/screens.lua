@@ -92,5 +92,18 @@ scan("Papierkorb", { ns.trashFrame })
 ns.ShowImport()
 scan("Import", { ns.importFrame })
 
+-- Fototour (/rb shots): jede gestellte Szene im Moment des Screenshots prüfen
+do
+    local n = 0
+    Screenshot = function()
+        n = n + 1
+        scan("Foto " .. n, { ns.frame, ns.tracker, ns.copyFrame, ns.importFrame })
+    end
+    ns.PhotoTour()
+    for _ = 1, 6 do RunTimers() end
+    Screenshot = nil
+    if n ~= 7 then found[#found + 1] = "Fototour: " .. n .. " statt 7 Bilder" end
+end
+
 for _, f in ipairs(found) do print("FEHLER: " .. f) end
 print(("Layout (%s): %d ok, %d Fehler"):format(GetLocale(), screens - math.min(screens, #found), #found))

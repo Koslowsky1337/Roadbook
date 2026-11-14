@@ -124,7 +124,7 @@ end
 function ns.MacroGroups()
     local groups, order = {}, {}
     if not ns.post then return order, groups end
-    for _, m in ipairs(ns.post.macros) do
+    for _, m in ipairs(ns.staging and ns.staging.macros or ns.post.macros) do
         if not groups[m.group] then groups[m.group] = {}; table.insert(order, m.group) end
         table.insert(groups[m.group], m)
     end

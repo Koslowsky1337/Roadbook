@@ -838,32 +838,42 @@ ns.DB.pickupMax = nil
 check(ns.PickupMax() == 120, "Ohne Einstellung gelten 2 Minuten")
 ns.DeactivatePlan(); RunTimers()
 
--- /rb fotos: jedes Fenster einmal, je ein Screenshot mit Zuschnitt-Daten, nichts bleibt verändert
+-- /rb fotos: jedes Fenster einmal mit Beispieldaten, je ein Screenshot mit Zuschnitt-Daten;
+-- eigene Pläne, Notizen und Makros sind nicht zu sehen und bleiben unverändert
 do
-    local shots = 0
-    Screenshot = function() shots = shots + 1 end
+    local shots, seenPlans, seenMacros, seenNotes, seenTravel = 0, nil, nil, nil, nil
+    Screenshot = function()
+        shots = shots + 1
+        if shots == 1 then
+            local t = {}
+            for _, p in ipairs(ns.GetPlans()) do t[#t + 1] = p.title end
+            seenPlans = joined(t)
+            seenTravel = ns.TravelRow() and ns.TravelRow().title
+            local order = ns.MacroGroups()
+            seenMacros = joined(order)
+            t = {}
+            for _, sec in ipairs(ns.GetNoteSections()) do for _, n in ipairs(sec.items) do t[#t + 1] = n.title end end
+            seenNotes = joined(t)
+        end
+    end
+    local plansBefore, activeBefore, selBefore, travelBefore = #ns.GetPlans(), ns.C.activePlan, ns.C.selectedPlan, ns.travel
+    local wpBefore = joined(TT_List())
     LOG = {}
     ns.HandleSlash("fotos")
-    check(joined(LOG):find("Lade zuerst einen Plan", 1, true) and shots == 0, "Fototour braucht einen geladenen Plan")
-    PLAYER = { map = 9000, x = 0.50, y = 0.45 }
-    ns.ActivatePlan("e:p840"); RunTimers()
-    local plansBefore, travelBefore, selBefore = #ns.GetPlans(), ns.travel, ns.C.selectedPlan
-    ns.HandleSlash("shots")
     for _ = 1, 6 do RunTimers() end
     local list = RoadbookDB.shots and RoadbookDB.shots.list or {}
-    check(shots == 8 and #list == 8, "Fototour: acht Screenshots mit Zuschnitt, sind " .. shots .. "/" .. #list)
+    check(shots == 7 and #list == 7, "Fototour: sieben Screenshots mit Zuschnitt, sind " .. shots .. "/" .. #list)
     local names = {}
     for _, r in ipairs(list) do names[#names + 1] = r.name end
-    check(joined(names) == "plans ; travel ; tracker ; route ; notes ; macros ; options ; import", "Reihenfolge der Bilder: " .. joined(names))
-    local okRect = true
-    for _, r in ipairs(list) do
-        if not (r.l >= 0 and r.r <= 1 and r.t >= 0 and r.b <= 1.05 and r.l < r.r and r.t < r.b) then okRect = false end
-    end
-    check(okRect, "Zuschnitt-Daten liegen im Bild")
-    check(#ns.GetPlans() == plansBefore and ns.travel == travelBefore and ns.C.selectedPlan == selBefore, "Fototour lässt Pläne und Reiseweg unverändert")
-    check(joined(LOG):find("8 Screenshots liegen im Ordner", 1, true), "Abschlussmeldung")
+    check(joined(names) == "plans ; tracker ; route ; notes ; macros ; options ; import", "Reihenfolge der Bilder: " .. joined(names))
+    check(seenPlans == "Abgaberunde (automatisch) ; Abgaben im Steinkrallengebirge ; Meine Punkte", "Nur Beispielpläne im Bild: " .. tostring(seenPlans))
+    check(seenTravel == "Anleger – Zeppelin Orgrimmar – Undercity", "Zeppelin als Reise-Zeile: " .. tostring(seenTravel))
+    check(seenMacros == "Roadbook ; Reise", "Nur Beispiel-Makros: " .. tostring(seenMacros))
+    check(seenNotes and seenNotes:find("Einkaufsliste", 1, true) and not seenNotes:find("Fluffy", 1, true), "Nur Beispiel-Notizen: " .. tostring(seenNotes))
+    check(ns.staging == nil and #ns.GetPlans() == plansBefore and ns.C.activePlan == activeBefore and ns.C.selectedPlan == selBefore
+          and ns.travel == travelBefore and joined(TT_List()) == wpBefore, "Nach der Fototour ist alles wie vorher")
+    check(joined(LOG):find("7 Screenshots liegen im Ordner", 1, true), "Abschlussmeldung")
     Screenshot = nil
-    ns.DeactivatePlan(); RunTimers()
 end
 
 -- Zeppelin auf demselben Kontinent: schneller als der lange Fußweg

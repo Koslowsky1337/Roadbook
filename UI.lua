@@ -372,7 +372,7 @@ function ns.UpdateUIInner()
     local status
     if ns.postError then
         status = L["|cffff6060Post is broken – see chat|r"]
-    elseif ns.post and ns.post.version then
+    elseif ns.post and ns.post.version and not ns.staging then
         status = L["Post: version "] .. ns.post.version
     else
         status = "Roadbook " .. ns.VERSION
@@ -648,7 +648,9 @@ function ns.UpdateTrackerHint(layout)
     local plan = ns.ActivePlan()
     local st = f.step
     local text, r, g, b
-    if plan and st and st.map then
+    if ns.staging then
+        text, r, g, b = ns.travel and ns.travel.text, 0.4, 0.85, 1
+    elseif plan and st and st.map then
         if not _G.TomTom then
             text, r, g, b = L["TomTom missing – no waypoints possible"], 1, 0.4, 0.3
         elseif not ns.StepUid(st) then

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `/rb shots` shows each window in turn and takes a screenshot of it (for the addon page); nothing is changed by it.
+- `/rb shots` shows each window in turn with example data (a turn-in round with a zeppelin, sample notes and macros) and takes a screenshot of it, for the addon page. Your own plans, notes and macros are not shown and not changed.
 
 ## 1.0.0-beta1
 

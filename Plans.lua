@@ -76,6 +76,7 @@ end
 
 -- Alle Pläne dieses Charakters: zuerst die aus der Post, dann die eigenen
 function ns.GetPlans()
+    if ns.staging then return ns.staging.plans end   -- /rb shots: nur Beispielpläne
     local out = {}
     if ns.post then
         for _, plan in ipairs(ns.post.plans) do
@@ -143,6 +144,8 @@ end
 
 -- Rückgabe: state ("done" | "ready" | "open" | "skipped"), detail
 function ns.StepState(step, planId)
+    local staged = ns.staging and ns.staging.states[step.key]
+    if staged then return staged[1], staged[2] end
     local t, q = step.type, step.quest
     local state, detail = "open", nil
     if t == "turnin" then
@@ -1479,6 +1482,7 @@ end
 local lastSpot, carried = nil, 0
 
 function ns.CheckRiding()
+    if ns.staging then return end
     local here = ns.PlayerPos()
     local speed = GetUnitSpeed and num((GetUnitSpeed("player")))
     if ns.wp.riding then
@@ -1505,6 +1509,7 @@ end
 
 -- Alle 2 Sekunden: hat sich der beste Reiseweg geändert? Dann neu abgleichen.
 function ns.CheckTravel()
+    if ns.staging then return end
     local plan = ns.ActivePlan()
     if not (plan and ns.wp.targetKey and _G.TomTom) then return end
     if UnitOnTaxi and UnitOnTaxi("player") then return end
@@ -1525,6 +1530,7 @@ local NEW_TAXI_RANGE = 400
 local taxiHinted = {}
 
 function ns.CheckNewTaxi()
+    if ns.staging then return end
     if UnitOnTaxi and UnitOnTaxi("player") then return end
     local here = ns.PlayerPos()
     if not here then return end
@@ -1749,6 +1755,7 @@ end
 
 -- Wegbeschreibung für die offenen Schritte (für /rb route)
 function ns.RouteText(plan)
+    if ns.staging then return ns.staging.route end
     if not plan then return L["No plan loaded or selected."] end
     local lines = { (L["Route description: %s"]):format(plan.title), "" }
     local prev = ns.PlayerPos()
@@ -1842,6 +1849,7 @@ local function finisherSpots(questID, faction)
 end
 
 local function questLogComplete()
+    if ns.staging then return ns.staging.ready end
     local out = {}
     local QLx = C_QuestLog
     if not (QLx and QLx.GetNumQuestLogEntries and QLx.GetInfo) then return out end

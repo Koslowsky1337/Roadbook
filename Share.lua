@@ -233,11 +233,13 @@ function ns.Build_options(panel, tab)
 end
 
 ---------------------------------------------------------------------------
--- /rb shots: die Fenster der Reihe nach zeigen und von jedem einen Screenshot
--- machen (für die Addon-Seite). Es wird nichts gestellt außer einer Reise-Zeile:
--- zu sehen ist dein geladener Plan. Zu jedem Bild merkt sich Roadbook, wo das
--- Fenster auf dem Bildschirm lag (RoadbookDB.shots, Anteile 0–1), damit
--- media/crop_shots.py die Bilder passend zuschneiden kann.
+-- /rb shots: die Fenster der Reihe nach mit Beispieldaten zeigen und von jedem
+-- einen Screenshot machen (für die Addon-Seite). Alles ist gestellt: eine
+-- Abgaberunde über zwei Kontinente mit Zeppelin, Beispiel-Notizen und -Makros.
+-- Deine eigenen Pläne, Notizen und Makros sind dabei nicht zu sehen und werden
+-- nicht angefasst (ns.staging lenkt nur die Anzeige um).
+-- Zu jedem Bild merkt sich Roadbook, wo das Fenster lag (RoadbookDB.shots,
+-- Anteile 0–1), damit media/crop_shots.py passend zuschneiden kann.
 ---------------------------------------------------------------------------
 local function screenRect(frame, padBottom)
     local l, r, t, b = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
@@ -247,86 +249,142 @@ local function screenRect(frame, padBottom)
     return { l = l * s / w, r = r * s / w, t = 1 - t * s / h, b = 1 - (b - (padBottom or 0)) * s / h }
 end
 
+local function demoData()
+    local function own(raw, created)
+        local plan = ns.NormalizePlan(raw, "eigen")
+        plan.rawId, plan.created = raw.id, created
+        return plan
+    end
+    local zep = (L["Zeppelin %s – %s"]):format("Orgrimmar", "Undercity")
+    local round = own({ id = "demo-round", auto = true, mode = "route", title = L["Turn-in round (automatic)"],
+        note = (L["Created %s from %d quests ready to turn in – sorted by travel time from your position (flight points and zones included). Click again to refresh the round."])
+            :format(date(L["%m/%d %H:%M"]), 5),
+        steps = {
+            { type = "turnin", quest = 990001, map = 1413, x = 48.1, y = 5.4, title = "Kadrak", text = L["Report to Kadrak"] },
+            { type = "turnin", quest = 990002, map = 1454, x = 34.3, y = 36.4, title = "Thrall", text = L["Hidden Enemies"] },
+            { type = "turnin", quest = 990003, map = 1421, x = 44.2, y = 42.7, title = L["Yuriv's Tombstone"], text = L["Until Death Do Us Part"] },
+            { type = "turnin", quest = 990004, map = 1421, x = 43.4, y = 40.9, title = "Mura Runetotem", text = L["A Lost Satchel"] },
+            { type = "turnin", quest = 990005, map = 1458, x = 48.8, y = 69.3, title = L["Apothecary Zinge"], text = L["Arugal's Folly"] },
+        } }, 3)
+    local stonetalon = own({ id = "demo-stonetalon", mode = "route", title = L["Stonetalon turn-ins"], steps = {
+        { type = "turnin", quest = 990011, map = 1442, x = 47.5, y = 58.4, title = "Tammra Windfield", text = L["Cycle of Rebirth"] },
+        { type = "turnin", quest = 990012, map = 1442, x = 47.2, y = 61.1, title = "Mor'rogal", text = L["Boulderslide Ravine"] },
+        { type = "goto", map = 1442, x = 59.0, y = 62.6, title = "Ziz Fizziks" },
+    } }, 2)
+    local spots = own({ id = "demo-spots", mode = "alle", title = L["My spots"], steps = {
+        { type = "goto", map = 1413, x = 62.0, y = 39.0, title = "Ratchet" },
+        { type = "goto", map = 1411, x = 51.5, y = 41.6, title = "Razor Hill" },
+    } }, 1)
+    local ready = L["ready to turn in"]
+    local staging = {
+        plans = { round, stonetalon, spots },
+        states = {
+            ["q990001:turnin"] = { "done" }, ["q990002:turnin"] = { "done" },
+            ["q990003:turnin"] = { "ready", ready }, ["q990004:turnin"] = { "ready", ready }, ["q990005:turnin"] = { "ready", ready },
+            ["q990011:turnin"] = { "done" }, ["q990012:turnin"] = { "ready", ready },
+        },
+        ready = { { quest = 990021, title = L["Deepmoss Spider Eggs"] }, { quest = 990022, title = L["Trouble in the Deeps"] } },
+        macros = {
+            { group = "Roadbook", name = "Roadbook", scope = "account", icon = 134400, body = "/rb",
+              note = L["Opens Roadbook. Put it on an action bar."] },
+            { group = "Roadbook", name = L["Turn-in round"], scope = "account", icon = 134400, body = "/rb turnin" },
+            { group = "Roadbook", name = L["Skip step"], scope = "account", icon = 134400, body = "/rb skip" },
+            { group = L["Travel"], name = L["Remember here"], scope = "char", icon = 134400, body = "/rb here" },
+            { group = L["Travel"], name = "Route", scope = "char", icon = 134400, body = "/rb route" },
+        },
+        notes = {
+            { header = "Roadbook", items = ns.BUILTIN_NOTES },
+            { header = L["For plans"], items = { { id = "demo:n1", title = "Plan: " .. L["Stonetalon turn-ins"] } } },
+            { header = L["My notes"], items = { { id = "demo:n2", title = L["Shopping list"] }, { id = "demo:n3", title = L["Profession trainers"] } } },
+            { header = L["For all characters"], items = { { id = "demo:n4", title = L["Bank and auction house"] } } },
+        },
+    }
+    local cur = round.steps[3]
+    staging.travel = { stepKey = cur.key, stepTitle = ns.StepTitle(cur), hop = { kind = "schiff", name = zep }, sig = "shots",
+        text = (L["First to the dock: %s"]):format(zep), waypoint = { title = L["Dock"], text = zep } }
+    local leg = L["  →  %s, about %s"]
+    staging.route = table.concat({
+        (L["Route description: %s"]):format(round.title), "",
+        ("1. %s (%s %.1f %.1f)%s"):format(ns.StepTitle(cur), ns.ZoneName(cur), cur.x, cur.y, leg:format(zep, ns.FmtTime(560))),
+        ("2. %s (%s %.1f %.1f)%s"):format(ns.StepTitle(round.steps[4]), ns.ZoneName(round.steps[4]), 43.4, 40.9, leg:format(L["on foot"], ns.FmtTime(35))),
+        ("3. %s (%s %.1f %.1f)%s"):format(ns.StepTitle(round.steps[5]), ns.ZoneName(round.steps[5]), 48.8, 69.3,
+            leg:format((L["Flight %s → %s"]):format("The Sepulcher", "Undercity"), ns.FmtTime(140))),
+        "",
+        (L["Estimated total: %s · flight points: %d known, %d of them found on this continent · speed %.1f yards/s"]):format(ns.FmtTime(735), 12, 3, 7),
+        L["Estimate: straight line × 1.3 on foot, flights from known flight points, +45 s per zone change."],
+    }, "\n")
+    return staging
+end
+
 function ns.PhotoTour()
     if InCombatLockdown() then return ns.Print(L["Not possible in combat."]) end
-    local plan = ns.ActivePlan()
-    if not plan then return ns.Print(L["Load a plan first (for example with /rb turnin), then run /rb shots again."]) end
-    local cur = ns.CurrentStep(plan)
-    local saved = { travel = ns.travel, expanded = ns.DB.tracker and ns.DB.tracker.expanded, selected = ns.C.selectedPlan }
-    local function closeExtras()
+    if ns.staging then return end
+    ns.DB.tracker = ns.DB.tracker or {}
+    local saved = { travel = ns.travel, expanded = ns.DB.tracker.expanded, hidden = ns.DB.tracker.hidden,
+                    active = ns.C.activePlan, selected = ns.C.selectedPlan, note = ns.selectedNoteId }
+    local staging = demoData()
+    local round = staging.plans[1]
+    local done = false
+    local function finish()
+        if done then return end
+        done = true
         for _, f in ipairs({ ns.copyFrame, ns.trashFrame, ns.importFrame }) do if f then f:Hide() end end
+        ns.staging = nil
+        ns.travel, ns.C.activePlan, ns.C.selectedPlan, ns.selectedNoteId = saved.travel, saved.active, saved.selected, saved.note
+        ns.DB.tracker.expanded, ns.DB.tracker.hidden = saved.expanded, saved.hidden
+        ns.planEditId = nil
+        ns.Refresh()
     end
+    ns.staging = staging
+    ns.travel = staging.travel
+    ns.C.activePlan, ns.C.selectedPlan = round.id, round.id
+    ns.DB.tracker.hidden, ns.DB.tracker.expanded = false, true
+
     local TABS = 34   -- die Reiter hängen unter dem Fenster
     local scenes = {
-        { "plans", function()
-            ns.C.selectedPlan = plan.id
-            ns.ShowFrame("plans")
-            return ns.frame, TABS
-        end },
-        { "travel", function()      -- Reise-Zeile im Plan; gestellt, falls gerade kein Flug ansteht
-            if not ns.travel and cur then
-                local title, text = L["Flight master "] .. "Orgrimmar", L["Flight to "] .. "Thunder Bluff"
-                ns.travel = { stepKey = cur.key, stepTitle = ns.StepTitle(cur), hop = { kind = "flug" }, sig = "shots",
-                    text = (L["First to the flight master in %s, fly to %s%s"]):format("Orgrimmar", "Thunder Bluff", ""),
-                    waypoint = { title = title, text = text } }
-            end
-            ns.UpdateUI()
-            return ns.frame, TABS
-        end },
-        { "tracker", function()
-            ns.frame:Hide()
-            ns.DB.tracker = ns.DB.tracker or {}
-            ns.DB.tracker.expanded = true
-            ns.UpdateUI()
-            return ns.tracker, 0
-        end },
-        { "route", function()
-            ns.travel = saved.travel
-            ns.DB.tracker.expanded = saved.expanded
-            ns.UpdateUI()
-            ns.ShowCopy(L["Route description"], ns.RouteText(plan))
-            return ns.copyFrame, 0
-        end },
+        { "plans", function() ns.ShowFrame("plans"); return ns.frame, TABS end },
+        { "tracker", function() ns.frame:Hide(); ns.UpdateUI(); return ns.tracker, 0 end },
+        { "route", function() ns.ShowCopy(L["Route description"], ns.RouteText(round)); return ns.copyFrame, 0 end },
         { "notes", function()
-            closeExtras()
+            ns.copyFrame:Hide()
             ns.ShowFrame("notes")
             ns.SelectNote("w:anleitung")
             return ns.frame, TABS
         end },
-        { "macros", function()
-            if #ns.post.macros == 0 then return nil end
-            ns.ShowFrame("macros")
-            return ns.frame, TABS
-        end },
-        { "options", function()
-            ns.ShowFrame("options")
-            return ns.frame, TABS
-        end },
+        { "macros", function() ns.ShowFrame("macros"); return ns.frame, TABS end },
+        { "options", function() ns.ShowFrame("options"); return ns.frame, TABS end },
         { "import", function()
             ns.frame:Hide()
             ns.ShowImport()
-            ns.importFrame.edit:SetText(ns.ExportPlan(plan))
+            ns.importFrame.edit:SetText(ns.ExportPlan(round))
             return ns.importFrame, 0
         end },
     }
     ns.DB.shots = { at = time(), list = {} }
     local i = 0
     local step
-    step = ns.Wrap("shots", function()
+    -- Bricht eine Szene mit einem Fehler ab, wird trotzdem aufgeräumt
+    local function guarded(fn)
+        return function()
+            local ok, err = pcall(fn)
+            if not ok then
+                ns.Log("E", "shots", "%s", tostring(err))
+                finish()
+            end
+        end
+    end
+    step = guarded(function()
         i = i + 1
         local scene = scenes[i]
         if not scene then
-            closeExtras()
-            ns.travel, ns.C.selectedPlan = saved.travel, saved.selected
-            ns.DB.tracker.expanded = saved.expanded
+            finish()
             ns.ShowFrame("plans")
             return ns.Print((L["%d screenshots saved in the Screenshots folder of your game. Type /reload so the cropping data is saved too."]):format(#ns.DB.shots.list))
         end
         local frame, pad = scene[2]()
-        if not frame then return step() end
-        C_Timer.After(1.2, ns.Wrap("shots", function()
+        C_Timer.After(1.2, guarded(function()
             -- ohne Position das ganze Bild: so passt die Liste immer zur Reihenfolge der Screenshots
-            local rect = screenRect(frame, pad) or { l = 0, r = 1, t = 0, b = 1 }
+            local rect = (frame and screenRect(frame, pad)) or { l = 0, r = 1, t = 0, b = 1 }
             rect.name = scene[1]
             table.insert(ns.DB.shots.list, rect)
             if Screenshot then Screenshot() end

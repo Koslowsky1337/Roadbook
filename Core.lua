@@ -321,6 +321,8 @@ function ns.ScheduleRefresh()
 end
 
 function ns.Refresh()
+    -- /rb shots zeigt gestellte Daten: keine Wegpunkte setzen, nur neu zeichnen
+    if ns.staging then if ns.UpdateUI then ns.UpdateUI() end return end
     ns.Safe("refresh", function()
         if ns.SyncWaypoints then ns.SyncWaypoints() end
         if ns.CheckProgress then ns.CheckProgress() end
