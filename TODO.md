@@ -65,7 +65,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 
 ## 5. Veröffentlichung
 
-- [ ] Screenshots für die CurseForge-Gallery machen:
+- [ ] Screenshots für die CurseForge-Gallery: Plan laden (z. B. `/rb abgabe`), `/rb fotos` eingeben, acht Bilder abwarten, dann `/reload`. Danach Bescheid geben – der Zuschnitt läuft mit `media/crop_shots.py`. Vorher prüfen, dass im Plan, in den Notizen und in den Makros nichts steht, was nicht öffentlich werden soll. Die Bilder zeigen:
   1. Reiter Pläne mit geladener Abgaberunde
   2. Tracker unter der Minimap mit Flughinweis und TomTom-Pfeil
   3. Chatzeile am Flugmeister („Flieg nach …“)

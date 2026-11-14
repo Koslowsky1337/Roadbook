@@ -457,6 +457,7 @@ local ALIAS = {
     abgabe = "turnin", abgaben = "turnin", hier = "here", papierkorb = "trash",
     flugmeister = "fm", importieren = "import", exportieren = "export",
     umweg = "detour", optionen = "options", einstellungen = "options", settings = "options",
+    fotos = "shots", screenshots = "shots",
 }
 
 local function planFor(rest)
@@ -508,6 +509,8 @@ function ns.HandleSlash(msg)
         ns.Print((L["Detour for an undiscovered flight master: %s"]):format(ns.PickupText()))
     elseif cmd == "options" then
         ns.ShowFrame("options")
+    elseif cmd == "shots" then
+        ns.PhotoTour()
     elseif cmd == "log" then
         local arg = rest:lower()
         if arg == "clear" or arg == "leeren" then

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `/rb shots` shows each window in turn and takes a screenshot of it (for the addon page); nothing is changed by it.
+
 ## 1.0.0-beta1
 
 Please report anything odd: https://github.com/Koslowsky1337/Roadbook/issues

@@ -838,6 +838,34 @@ ns.DB.pickupMax = nil
 check(ns.PickupMax() == 120, "Ohne Einstellung gelten 2 Minuten")
 ns.DeactivatePlan(); RunTimers()
 
+-- /rb fotos: jedes Fenster einmal, je ein Screenshot mit Zuschnitt-Daten, nichts bleibt verändert
+do
+    local shots = 0
+    Screenshot = function() shots = shots + 1 end
+    LOG = {}
+    ns.HandleSlash("fotos")
+    check(joined(LOG):find("Lade zuerst einen Plan", 1, true) and shots == 0, "Fototour braucht einen geladenen Plan")
+    PLAYER = { map = 9000, x = 0.50, y = 0.45 }
+    ns.ActivatePlan("e:p840"); RunTimers()
+    local plansBefore, travelBefore, selBefore = #ns.GetPlans(), ns.travel, ns.C.selectedPlan
+    ns.HandleSlash("shots")
+    for _ = 1, 6 do RunTimers() end
+    local list = RoadbookDB.shots and RoadbookDB.shots.list or {}
+    check(shots == 8 and #list == 8, "Fototour: acht Screenshots mit Zuschnitt, sind " .. shots .. "/" .. #list)
+    local names = {}
+    for _, r in ipairs(list) do names[#names + 1] = r.name end
+    check(joined(names) == "plans ; travel ; tracker ; route ; notes ; macros ; options ; import", "Reihenfolge der Bilder: " .. joined(names))
+    local okRect = true
+    for _, r in ipairs(list) do
+        if not (r.l >= 0 and r.r <= 1 and r.t >= 0 and r.b <= 1.05 and r.l < r.r and r.t < r.b) then okRect = false end
+    end
+    check(okRect, "Zuschnitt-Daten liegen im Bild")
+    check(#ns.GetPlans() == plansBefore and ns.travel == travelBefore and ns.C.selectedPlan == selBefore, "Fototour lässt Pläne und Reiseweg unverändert")
+    check(joined(LOG):find("8 Screenshots liegen im Ordner", 1, true), "Abschlussmeldung")
+    Screenshot = nil
+    ns.DeactivatePlan(); RunTimers()
+end
+
 -- Zeppelin auf demselben Kontinent: schneller als der lange Fußweg
 MAPOFF[1420] = { 0, 0, 1000, 8 }; MAPOFF[1434] = { 0, 9000, 1000, 8 }
 ns.ClearRouteCache(); ns.taxiVersion = ns.taxiVersion + 1

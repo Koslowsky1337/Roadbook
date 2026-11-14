@@ -233,6 +233,110 @@ function ns.Build_options(panel, tab)
 end
 
 ---------------------------------------------------------------------------
+-- /rb shots: die Fenster der Reihe nach zeigen und von jedem einen Screenshot
+-- machen (für die Addon-Seite). Es wird nichts gestellt außer einer Reise-Zeile:
+-- zu sehen ist dein geladener Plan. Zu jedem Bild merkt sich Roadbook, wo das
+-- Fenster auf dem Bildschirm lag (RoadbookDB.shots, Anteile 0–1), damit
+-- media/crop_shots.py die Bilder passend zuschneiden kann.
+---------------------------------------------------------------------------
+local function screenRect(frame, padBottom)
+    local l, r, t, b = frame:GetLeft(), frame:GetRight(), frame:GetTop(), frame:GetBottom()
+    local s, us = frame:GetEffectiveScale(), UIParent:GetEffectiveScale()
+    local w, h = UIParent:GetWidth() * us, UIParent:GetHeight() * us
+    if not (l and r and t and b and w > 0 and h > 0) then return nil end
+    return { l = l * s / w, r = r * s / w, t = 1 - t * s / h, b = 1 - (b - (padBottom or 0)) * s / h }
+end
+
+function ns.PhotoTour()
+    if InCombatLockdown() then return ns.Print(L["Not possible in combat."]) end
+    local plan = ns.ActivePlan()
+    if not plan then return ns.Print(L["Load a plan first (for example with /rb turnin), then run /rb shots again."]) end
+    local cur = ns.CurrentStep(plan)
+    local saved = { travel = ns.travel, expanded = ns.DB.tracker and ns.DB.tracker.expanded, selected = ns.C.selectedPlan }
+    local function closeExtras()
+        for _, f in ipairs({ ns.copyFrame, ns.trashFrame, ns.importFrame }) do if f then f:Hide() end end
+    end
+    local TABS = 34   -- die Reiter hängen unter dem Fenster
+    local scenes = {
+        { "plans", function()
+            ns.C.selectedPlan = plan.id
+            ns.ShowFrame("plans")
+            return ns.frame, TABS
+        end },
+        { "travel", function()      -- Reise-Zeile im Plan; gestellt, falls gerade kein Flug ansteht
+            if not ns.travel and cur then
+                local title, text = L["Flight master "] .. "Orgrimmar", L["Flight to "] .. "Thunder Bluff"
+                ns.travel = { stepKey = cur.key, stepTitle = ns.StepTitle(cur), hop = { kind = "flug" }, sig = "shots",
+                    text = (L["First to the flight master in %s, fly to %s%s"]):format("Orgrimmar", "Thunder Bluff", ""),
+                    waypoint = { title = title, text = text } }
+            end
+            ns.UpdateUI()
+            return ns.frame, TABS
+        end },
+        { "tracker", function()
+            ns.frame:Hide()
+            ns.DB.tracker = ns.DB.tracker or {}
+            ns.DB.tracker.expanded = true
+            ns.UpdateUI()
+            return ns.tracker, 0
+        end },
+        { "route", function()
+            ns.travel = saved.travel
+            ns.DB.tracker.expanded = saved.expanded
+            ns.UpdateUI()
+            ns.ShowCopy(L["Route description"], ns.RouteText(plan))
+            return ns.copyFrame, 0
+        end },
+        { "notes", function()
+            closeExtras()
+            ns.ShowFrame("notes")
+            ns.SelectNote("w:anleitung")
+            return ns.frame, TABS
+        end },
+        { "macros", function()
+            if #ns.post.macros == 0 then return nil end
+            ns.ShowFrame("macros")
+            return ns.frame, TABS
+        end },
+        { "options", function()
+            ns.ShowFrame("options")
+            return ns.frame, TABS
+        end },
+        { "import", function()
+            ns.frame:Hide()
+            ns.ShowImport()
+            ns.importFrame.edit:SetText(ns.ExportPlan(plan))
+            return ns.importFrame, 0
+        end },
+    }
+    ns.DB.shots = { at = time(), list = {} }
+    local i = 0
+    local step
+    step = ns.Wrap("shots", function()
+        i = i + 1
+        local scene = scenes[i]
+        if not scene then
+            closeExtras()
+            ns.travel, ns.C.selectedPlan = saved.travel, saved.selected
+            ns.DB.tracker.expanded = saved.expanded
+            ns.ShowFrame("plans")
+            return ns.Print((L["%d screenshots saved in the Screenshots folder of your game. Type /reload so the cropping data is saved too."]):format(#ns.DB.shots.list))
+        end
+        local frame, pad = scene[2]()
+        if not frame then return step() end
+        C_Timer.After(1.2, ns.Wrap("shots", function()
+            -- ohne Position das ganze Bild: so passt die Liste immer zur Reihenfolge der Screenshots
+            local rect = screenRect(frame, pad) or { l = 0, r = 1, t = 0, b = 1 }
+            rect.name = scene[1]
+            table.insert(ns.DB.shots.list, rect)
+            if Screenshot then Screenshot() end
+            C_Timer.After(0.8, step)
+        end))
+    end)
+    step()
+end
+
+---------------------------------------------------------------------------
 -- Layout-Prüfer (/rb layout): meldet abgeschnittene, überstehende und
 -- überlappende Texte/Knöpfe als Warnung „layout“ im Protokoll. Dient auch
 -- den Tests (tests/layout.lua) für alle Sprachen.

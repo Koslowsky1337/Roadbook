@@ -387,3 +387,5 @@ L["If an undiscovered flight master is almost on your way, Roadbook adds it as a
 L["Detour up to: %s"] = "Umweg bis zu: %s"
 L["Detour for an undiscovered flight master: %s"] = "Umweg für einen unbekannten Flugmeister: %s"
 L["|cffffffff/rb options|r – settings · |cffffffff/rb detour <seconds>|r – detour worth taking for an undiscovered flight master (0 = off)"] = "|cffffffff/rb optionen|r – Einstellungen · |cffffffff/rb umweg <Sekunden>|r – Umweg, den ein unbekannter Flugmeister wert ist (0 = aus)"
+L["Load a plan first (for example with /rb turnin), then run /rb shots again."] = "Lade zuerst einen Plan (zum Beispiel mit /rb abgabe) und starte /rb fotos dann noch einmal."
+L["%d screenshots saved in the Screenshots folder of your game. Type /reload so the cropping data is saved too."] = "%d Screenshots liegen im Ordner „Screenshots“ deines Spiels. Mach /reload, damit auch die Daten für den Zuschnitt gespeichert werden."
