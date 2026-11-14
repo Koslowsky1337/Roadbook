@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Zeppelins and boats are now also used within one continent when they are faster than walking, for example Undercity – Grom'gol instead of crossing the Eastern Kingdoms on foot. New lines: Undercity ↔ Grom'gol, Rut'theran ↔ Auberdine.
+- Fixed: before you had opened a flight map, every flight point counted as known, so flights to places you had never visited could be recommended. Now Roadbook recommends flights on a continent only after you have opened a flight map there.
+- Tracker: while the way leads to a flight master or dock first, the distance shown is the distance to that point ("350 yd · then Westfall 37.4 50.7").
 - The way to a flight master or dock now shows as its own line in the plan. "Skip" (tracker button, `/rb skip`) or a right-click on that line skips it first, so the arrow points straight to the step; a second right-click brings it back. Useful when a dock or flight master is not exactly where Roadbook expects it.
 - The TomTom arrow at a flight master now also names where to fly ("Flight master Thunder Bluff – Flight to Sun Rock Retreat"), as the map pin already did. If a zeppelin or boat follows, it is named too.
 

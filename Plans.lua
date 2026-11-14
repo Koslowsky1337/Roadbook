@@ -1121,7 +1121,8 @@ local function isKnownTaxi(node)
         end
         return false
     end
-    if node.isUndiscovered ~= nil then return not node.isUndiscovered end
+    -- Noch keine Flugkarte geöffnet: nichts als bekannt werten. Das Feld isUndiscovered
+    -- taugt dafür nicht – auf Forever meldet es auch nie besuchte Flugpunkte als entdeckt.
     return false
 end
 
@@ -1203,12 +1204,14 @@ local ZEP, BOAT = L["Zeppelin %s – %s"], L["Boat %s – %s"]
 local LINKS = {
     { 1411, 50.82, 13.54, 1420, 60.74, 58.87, "Horde", ZEP, "Orgrimmar", "Undercity" },
     { 1411, 50.69, 12.89, 1434, 31.43, 29.91, "Horde", ZEP, "Orgrimmar", "Grom'gol" },
+    { 1420, 61.78, 59.18, 1434, 31.54, 29.36, "Horde", ZEP, "Undercity", "Grom'gol" },
     { 1412, 33.40, 22.50, 2521, 57.98, 80.57, "Horde", ZEP, "Thunder Bluff", L["Zephras Isle"] },
     { 1413, 63.74, 38.50, 1434, 26.08, 73.35, nil, BOAT, "Ratchet", "Booty Bay" },
     { 1446, 67.57, 23.10, 2548, 79.38, 53.41, nil, BOAT, "Tanaris", L["Riverglades"] },
     { 1453, 23.22, 55.05, 1439, 30.79, 40.82, "Alliance", BOAT, "Stormwind", "Auberdine" },
     { 1439, 32.30, 43.76, 1437, 4.83, 57.04, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"] },
     { 1437, 5.21, 63.71, 1445, 71.28, 56.29, "Alliance", BOAT, L["Menethil Harbor"], "Theramore" },
+    { 1438, 55.60, 96.50, 1439, 32.40, 39.80, nil, BOAT, "Rut'theran", "Auberdine" },
     { 2521, 65.69, 83.22, 1416, 12.30, 56.49, "Alliance", ZEP, L["Zephras Isle"], "Dalaran" },
 }
 local linkCache
@@ -1228,7 +1231,7 @@ local function links()
             local a, b = ns.WorldPos(l[1], l[2], l[3]), ns.WorldPos(l[4], l[5], l[6])
             if not (a and b) then
                 complete = false
-            elseif a.c ~= b.c then
+            else
                 local name = l[8]:format(l[9], l[10])
                 local am = { map = l[1], x = l[2], y = l[3] }
                 local bm = { map = l[4], x = l[5], y = l[6] }
@@ -1261,19 +1264,18 @@ end
 function ns.LegCost(a, b)
     if not (a and b) then return nil end
     local zone = (a.map and b.map and a.map ~= b.map) and ZONE_CHANGE or 0
-    if a.c == b.c then
-        local t, how, via = sameContinent(a, b)
-        return t + zone, how, via
-    end
-    local best, via
+    local best, how, via
+    if a.c == b.c then best, how, via = sameContinent(a, b) end
+    -- Zeppelin/Schiff: zwischen Kontinenten nötig, auf demselben Kontinent oft schneller
+    -- als der Fußweg (z. B. Undercity – Grom'gol statt quer durch die Östlichen Königreiche)
     for _, l in ipairs(links()) do
         if l.a.c == a.c and l.b.c == b.c then
             local t = sameContinent(a, l.a) + SHIP_TIME + sameContinent(l.b, b)
-            if not best or t < best then best, via = t, l end
+            if not best or t < best then best, how, via = t, "schiff", l end
         end
     end
     if not best then return NO_LINK + zone, "fern", nil end
-    return best + zone, "schiff", via
+    return best + zone, how, via
 end
 
 local function fmtTime(sec)

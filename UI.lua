@@ -498,9 +498,12 @@ end
 local function currentDistance(step)
     local tt = _G.TomTom
     local uid = step and ns.StepUid and ns.StepUid(step)
+    -- Führt der Weg erst zum Flugmeister/Anleger, zählt die Entfernung dorthin
+    local viaTravel = step and ns.travel and ns.travel.stepKey == step.key and ns.wp.travelUid
+    if viaTravel then uid = viaTravel end
     if not (tt and uid and tt.GetDistanceToWaypoint) then return nil end
     local ok, d = pcall(tt.GetDistanceToWaypoint, tt, uid)
-    return ok and d or nil
+    return ok and d or nil, viaTravel and true or false
 end
 
 local function SaveTrackerPos(f)
@@ -618,8 +621,13 @@ function ns.CreateTracker()
         slow = slow + acc
         acc = 0
         if f.step then
-            local d = fmtDist(currentDistance(f.step))
-            f.line2:SetText((f.where or "") .. (d and ((f.where and f.where ~= "" and " · " or "") .. d) or ""))
+            local yards, viaTravel = currentDistance(f.step)
+            local d = fmtDist(yards)
+            if d and viaTravel then
+                f.line2:SetText((L["%s · then %s"]):format(d, f.where or ""))
+            else
+                f.line2:SetText((f.where or "") .. (d and ((f.where and f.where ~= "" and " · " or "") .. d) or ""))
+            end
         end
         if slow >= 3 then
             slow = 0

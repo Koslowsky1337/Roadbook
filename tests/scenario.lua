@@ -787,6 +787,31 @@ ns.HandleSlash("fm")
 check(joined(TT_List()):find("Flugmeister Windschere|Roadbook flight master", 1, true), "/rb fm setzt einen Wegpunkt: " .. joined(TT_List()))
 fire("QUEST_LOG_UPDATE"); RunTimers()
 check(joined(TT_List()):find("Flugmeister Windschere", 1, true), "Der Abgleich lässt den Flugmeister-Punkt stehen")
+-- Zeppelin auf demselben Kontinent: schneller als der lange Fußweg
+MAPOFF[1420] = { 0, 0, 1000, 8 }; MAPOFF[1434] = { 0, 9000, 1000, 8 }
+ns.ClearRouteCache(); ns.taxiVersion = ns.taxiVersion + 1
+local zFrom, zTo = ns.WorldPos(1420, 60, 58), ns.WorldPos(1434, 40, 40)
+local zText, zTime, zHow = ns.LegText(zFrom, zTo)
+check(zHow == "schiff" and zText == "Zeppelin Undercity – Grom'gol" and zTime < 700,
+      "Gleicher Kontinent: Zeppelin statt 9 km zu Fuß: " .. tostring(zText) .. " " .. tostring(zTime))
+check(select(3, ns.LegText(zFrom, ns.WorldPos(1420, 30, 30))) == "lauf", "Kurzer Weg auf demselben Kontinent bleibt zu Fuß")
+PLAYER = { map = 1420, x = 0.5, y = 0.5 }
+ns.C.plans["p810"] = { id = "p810", title = "Süden", mode = "route", created = 9, steps = {
+    { type = "goto", map = 1434, x = 40, y = 40, title = "Weit im Süden" } } }
+ns.ActivatePlan("e:p810"); RunTimers()
+check(ns.travel and ns.travel.hop.kind == "schiff" and TomTom.arrow[1] == 1420
+      and TomTom.arrowTitle == "Anleger – Zeppelin Undercity – Grom'gol", "Pfeil zuerst zum Zeppelin: " .. tostring(TomTom.arrowTitle))
+-- angekommen: kein Zeppelin zurück, zu Fuß weiter
+PLAYER = { map = 1434, x = 0.32, y = 0.30 }
+fire("ZONE_CHANGED_NEW_AREA"); RunTimers()
+check(ns.travel == nil and TomTom.arrow.title == "Weit im Süden", "Nach der Fahrt zu Fuß zum Ziel: " .. tostring(TomTom.arrow and TomTom.arrow.title))
+ns.DeactivatePlan(); RunTimers()
+-- ohne je geöffnete Flugkarte gilt kein Flugpunkt als bekannt, auch wenn das Spiel ihn „entdeckt“ nennt
+local keepTaxi = ns.C.taxi
+ns.C.taxi = {}; ns.taxiVersion = ns.taxiVersion + 1
+TAXI[9000][1].isUndiscovered = false
+check(#ns.KnownTaxiNodes(9002) == 0, "Leere Liste: nichts bekannt")
+ns.C.taxi = keepTaxi; ns.taxiVersion = ns.taxiVersion + 1
 check(#ERRORS_FORWARDED == errBase8, "Keine neuen Lua-Fehler in 0.8: " .. joined(ERRORS_FORWARDED))
 
 print(("Tests: %d ok, %d Fehler, %d Knöpfe geklickt"):format(passes, fails, clicked))
