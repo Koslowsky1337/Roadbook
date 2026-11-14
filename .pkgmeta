@@ -6,6 +6,7 @@ ignore:
   - "*.md"
   - README.md
   - TODO.md
+  - CURSEFORGE.md
 
 manual-changelog:
   filename: CHANGELOG.md
