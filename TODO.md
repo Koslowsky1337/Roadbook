@@ -1,0 +1,76 @@
+# Roadbook – was noch zu tun ist
+
+Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tests im englischen Client, der Layout-Prüfer über 30 Bildschirme je Sprache und der Übersetzungs-Check (`python tests/all.py`). Alles hier unten kann nur im Spiel oder von dir erledigt werden.
+
+## 1. Einmalig vor dem ersten Test
+
+- [ ] **Spiel ganz beenden und neu starten.** Die Dateiliste hat sich geändert (`Locales\`, `Share.lua`, kein `Post.lua` mehr) und `Roadbook_Post` ist ein neuer Addon-Ordner – `/reload` reicht dafür nicht.
+- [ ] In der Addon-Liste prüfen: **Roadbook** und **Roadbook Post** sind aktiv, TomTom und QuestieDB ebenfalls (Roadbook lädt ohne sie nicht mehr).
+- [ ] Nach dem Login: kein roter Fehler (BugSack), im Chat einmalig „Willkommen! /rb öffnet das Roadbook …“ und die Meldung „Neue Post“.
+
+## 2. Im Spiel testen (deutscher Client)
+
+**Übernahme deiner Daten**
+- [ ] Deine eigenen Pläne, Notizen und der Fortschritt sind noch da.
+- [ ] Reiter Makros: deine zehn Makros aus der Post stehen da, Status passt (aktuell/geändert).
+- [ ] Ausgeblendete Post-Notizen/-Pläne sind weiterhin ausgeblendet.
+
+**Abgaberunde und Pfeil**
+- [ ] `/rb abgabe` und `/rb turnin` erstellen die Runde; Reihenfolge wirkt sinnvoll.
+- [ ] Modus „Alle“: Klick auf einen anderen Schritt – der Pfeil bleibt dort, auch nachdem du etwas aufgehoben hast (früher sprang er zurück).
+- [ ] Quest abgeben: Schritt hakt sich ab, Pfeil geht zum nächsten.
+- [ ] Wiederholbare Quest abgeben und neu annehmen: der Schritt ist wieder offen.
+- [ ] `/rb hier` zweimal an derselben Stelle (ohne geladenen Plan): beide Schritte landen im selben Plan und sind offen.
+
+**Flüge**
+- [ ] Beim Flugmeister die Flugkarte öffnen: im Protokoll (`/rb log`) steht „… flight point(s) remembered as known“. Danach `/rb route`: „Flugpunkte: X bekannt“ passt zu deinen Flugpunkten (deine alten Einträge werden dabei von Namen auf Nummern umgestellt).
+- [ ] **Unbekannter Flugmeister:** in die Nähe (unter 400 m) eines Flugmeisters gehen, den du noch nicht hast. Erwartet: einmalig die Chatzeile „Unbekannter Flugmeister in der Nähe …“. `/rb fm` setzt einen TomTom-Punkt dorthin. Kommt die Meldung **nicht**, bitte Bescheid geben – dann liefert das Spiel `isUndiscovered` nicht und der Hinweis erscheint erst, nachdem du auf dem Kontinent einmal eine Flugkarte geöffnet hast.
+- [ ] Kommt die Meldung fälschlich für einen Flugmeister, den du **schon hast**? Dann ebenfalls melden.
+- [ ] Wird ein Flug empfohlen: am Flugmeister nennt der Chat das Ziel, nach der Landung zeigt der Pfeil zum eigentlichen Ziel. Stoppuhr-Gefühl: war der Flug wirklich schneller?
+
+**Zeppeline und Schiffe** (aus den Spieldaten bestätigt: Orgrimmar, Undercity, Grom'gol, Ratchet, Booty Bay)
+- [ ] Ziel auf dem anderen Kontinent: Pfeil zeigt zum Anleger, und der steht an der richtigen Stelle.
+- [ ] Nicht bestätigt, nur aus Pastime übernommen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande und alle Allianz-Linien (Stormwind, Auberdine, Menethil, Theramore, Dalaran). Wenn du dort vorbeikommst: stimmt der Anleger?
+
+**Import/Export**
+- [ ] Plan wählen → „Export“ → Text kopieren → „Plan importieren“ → einfügen → derselbe Plan entsteht als eigener.
+- [ ] `/way Durotar 53.5 9.0 Test` und `/way 50 50` ins Importfenster einfügen: es entsteht ein Plan mit zwei Punkten.
+
+**Fenster und Bedienung**
+- [ ] `/rb layout` bei offenem Fenster in jedem Reiter, mit ausgeklapptem Tracker, Papierkorb, Kopier- und Importfenster: „0 Auffälligkeiten“. Der Test rechnet Textbreiten nur näherungsweise, das Spiel misst echt.
+- [ ] Addon-Menü an der Minimap: Eintrag „Roadbook“ öffnet das Fenster.
+- [ ] ESC schließt Hauptfenster, Papierkorb, Kopier- und Importfenster.
+- [ ] Tastaturbelegung → Roadbook: beide Einträge sind deutsch beschriftet.
+- [ ] Makro im Kampf: „Übernehmen“ und „Aufnehmen“ sind gesperrt.
+
+## 3. Englischer Client (einmal reicht)
+
+- [ ] Client auf Englisch stellen (Battle.net → Spieleinstellungen → Sprache) oder einen Freund bitten: alle Texte englisch, `/rb help` listet englische Befehle, `/rb layout` meldet nichts.
+- [ ] Deine bekannten Flugpunkte sind nach dem Sprachwechsel noch bekannt (`/rb route`).
+
+## 4. Offen im Code (bewusst verschoben)
+
+- [ ] Alle Pläne werden bei jedem Zugriff neu aufbereitet (Befund 15). Kein messbares Problem in den Tests; falls es im Spiel bei vielen Plänen ruckelt, baue ich einen Zwischenspeicher ein.
+- [ ] Als Geist (TomTom „Leiche behalten“) übernimmt TomTom den Pfeil nicht; nach dem Wiederbeleben einmal auf den Tracker klicken.
+- [ ] Das gemerkte Reittempo gilt auch, wenn du gerade zu Fuß bist.
+- [ ] Kein Eintrag in den Spiel-Einstellungen (alles geht über `/rb` und das Fenster).
+
+## 5. Veröffentlichung
+
+- [ ] Screenshots machen (Liste steht im README unter „Screenshots“).
+- [ ] CurseForge-Projekt anlegen: Name **Roadbook**, Logo `media/logo.png`, Lizenz MIT, Kategorie Quests & Leveling (zusätzlich Map & Minimap), Spielversion **Forever**. Summary und Description: siehe unten.
+- [ ] Auf der Projektseite unter *Relations* prüfen, dass **TomTom** und **QuestieDB** als *Required Dependency* stehen (kommt aus `.pkgmeta`; falls nicht, von Hand eintragen).
+- [ ] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.
+- [ ] `CHANGELOG.md`: Überschrift „Unreleased“ in `1.0.0-beta1` umbenennen.
+- [ ] Tag `v1.0.0-beta1` setzen und pushen. Im Zip prüfen: kein `tests`, kein `media`, keine `.md`; in der TOC steht die Tag-Version.
+- [ ] Erst nach dem Beta-Test: Tag `v1.0.0` (ohne „beta“ = Release, nur das erscheint in der CurseForge-App).
+
+### CurseForge-Texte
+
+- **Summary:** Turns your quest log into a turn-in route ordered by travel time, with TomTom waypoints, flight paths, a notebook and a macro library.
+- **Description:** den Inhalt von `README.md` einfügen (Englisch steht oben, Deutsch darunter). Den Abschnitt „Screenshots (to add on CurseForge)“ dabei weglassen.
+
+## Arbeitsweise
+
+- Geändert wird nur im Git-Ordner `D:\Claude\WoW Addons\Roadbook`. Danach: Tests (`python tests/all.py`), in den Spielordner kopieren, committen, pushen – immer alle drei.
+- `Roadbook_Post` (deine private Post samt `make_post.py`) liegt nur im Spielordner und gehört nicht ins Repo.

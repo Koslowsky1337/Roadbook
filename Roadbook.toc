@@ -1,0 +1,26 @@
+## Interface: 16001
+## Title: Roadbook
+## Notes: Turns your quest log into a turn-in route ordered by travel time, with TomTom waypoints, known flight paths, a notebook and a macro library. /rb
+## Notes-deDE: Macht aus deinem Questlog eine Abgaberunde nach Reisezeit – mit TomTom-Wegpunkten, bekannten Flugpunkten, Notizbuch und Makro-Bibliothek. /rb
+## Category: Quests
+## Category-deDE: Quests
+## Author: Koslowsky1337
+## Version: @project-version@
+## X-License: MIT
+## IconTexture: Interface\Icons\INV_Misc_Note_01
+## AddonCompartmentFunc: Roadbook_OnAddonCompartmentClick
+## Dependencies: TomTom, QuestieDB
+## SavedVariables: RoadbookDB
+## SavedVariablesPerCharacter: RoadbookCharDB
+
+Locales\Locales.lua
+Locales\deDE.lua
+Core.lua
+Plans.lua
+Macros.lua
+Notes.lua
+UI.lua
+TabPlans.lua
+TabNotes.lua
+TabMacros.lua
+Share.lua

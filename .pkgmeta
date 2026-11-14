@@ -1,0 +1,16 @@
+package-as: Roadbook
+
+ignore:
+  - tests
+  - media
+  - "*.md"
+  - README.md
+  - TODO.md
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+required-dependencies:
+  - tomtom
+  - questiedb

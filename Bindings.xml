@@ -1,0 +1,8 @@
+<Bindings>
+	<Binding name="ROADBOOK_TOGGLE" category="Roadbook">
+		Roadbook_Toggle()
+	</Binding>
+	<Binding name="ROADBOOK_SKIP" category="Roadbook">
+		Roadbook_SkipStep()
+	</Binding>
+</Bindings>
