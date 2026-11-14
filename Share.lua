@@ -4,7 +4,10 @@
 --   RB1 <Titel>
 --   mode=route
 --   note=<Text>
---   step|type=turnin|quest=1064|map=1456|x=22.8|y=20.9|title=…|text=…|note=…
+--   step;type=turnin;quest=1064;map=1456;x=22.8;y=20.9;title=…;text=…;note=…
+-- Kein „|“ im Text: WoW liest |t, |n, |c … in Textfeldern als Steuerzeichen und würde
+-- den Export beim Anzeigen und Kopieren verstümmeln. Der Import versteht auch die
+-- alte Fassung mit „|“ (1.0.0-alpha1/beta1).
 -- Karten stehen als Nummer (uiMapID) drin, damit ein Plan in jeder Sprache passt.
 -- Der Import liest außerdem einfache /way-Zeilen (wie bei TomTom).
 local ADDON, ns = ...
@@ -15,10 +18,10 @@ local STEP_KEYS = { "type", "quest", "item", "count", "map", "x", "y", "title", 
 local NUMERIC = { quest = true, item = true, count = true, map = true, x = true, y = true }
 
 local function esc(v)
-    return (tostring(v):gsub("\\", "\\\\"):gsub("|", "\\p"):gsub("\r", ""):gsub("\n", "\\n"))
+    return (tostring(v):gsub("\\", "\\\\"):gsub("|", "\\p"):gsub(";", "\\s"):gsub("\r", ""):gsub("\n", "\\n"))
 end
 local function unesc(v)
-    return (v:gsub("\\(.)", function(c) return (c == "n" and "\n") or (c == "p" and "|") or c end))
+    return (v:gsub("\\(.)", function(c) return (c == "n" and "\n") or (c == "p" and "|") or (c == "s" and ";") or c end))
 end
 
 function ns.ExportPlan(plan)
@@ -30,7 +33,7 @@ function ns.ExportPlan(plan)
             local v = st[k]
             if v ~= nil and not (k == "count" and v == 1) then parts[#parts + 1] = k .. "=" .. esc(v) end
         end
-        lines[#lines + 1] = table.concat(parts, "|")
+        lines[#lines + 1] = table.concat(parts, ";")
     end
     return table.concat(lines, "\n")
 end
@@ -87,9 +90,9 @@ function ns.ParsePlanText(text)
             plan.mode = (line:sub(6) == "all") and "alle" or "route"
         elseif line:match("^note=") then
             plan.note = unesc(line:sub(6))
-        elseif line:match("^step|") then
+        elseif line:match("^step[;|]") then
             local raw = {}
-            for k, v in line:gmatch("|(%a+)=([^|]*)") do
+            for k, v in line:gsub("||", "|"):gmatch("[;|](%a+)=([^;|]*)") do
                 v = unesc(v)
                 if NUMERIC[k] then raw[k] = tonumber(v) else raw[k] = v end
             end
@@ -344,7 +347,12 @@ function ns.PhotoTour()
     local scenes = {
         { "plans", function() ns.ShowFrame("plans"); return ns.frame, TABS end },
         { "tracker", function() ns.frame:Hide(); ns.UpdateUI(); return ns.tracker, 0 end },
-        { "route", function() ns.ShowCopy(L["Route description"], ns.RouteText(round)); return ns.copyFrame, 0 end },
+        { "route", function()
+            ns.ShowCopy(L["Route description"], ns.RouteText(round))
+            ns.copyFrame.edit:HighlightText(0, 0)
+            ns.copyFrame.edit:ClearFocus()
+            return ns.copyFrame, 0
+        end },
         { "notes", function()
             ns.copyFrame:Hide()
             ns.ShowFrame("notes")
@@ -357,6 +365,7 @@ function ns.PhotoTour()
             ns.frame:Hide()
             ns.ShowImport()
             ns.importFrame.edit:SetText(ns.ExportPlan(round))
+            ns.importFrame.edit:ClearFocus()
             return ns.importFrame, 0
         end },
     }

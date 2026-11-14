@@ -68,8 +68,8 @@ There is also a minimap button, an entry in the addon menu at the minimap, and t
 ```
 RB1 Barrens turn-ins
 mode=route
-step|type=turnin|quest=872|map=1413|x=51.5|y=30.9|title=Thork|text=The Disruption Ends
-step|type=goto|map=1413|x=62.0|y=39.0|title=Ratchet
+step;type=turnin;quest=872;map=1413;x=51.5;y=30.9;title=Thork;text=The Disruption Ends
+step;type=goto;map=1413;x=62.0;y=39.0;title=Ratchet
 ```
 
 Maps are stored as numbers (uiMapID), so a plan works in every client language. Step types: `turnin`, `complete`, `accept`, `item` (with `item=` and `count=`), `goto`, `manual`. The import never runs code.

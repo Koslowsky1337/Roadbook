@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed: exported plans were garbled in the copy window, so sharing did not work. The game reads `|t`, `|n` and similar as control codes in text boxes, and the export used `|` as separator. The export now uses `;`. Text exported with 1.0.0-beta1 can still be imported.
+- Fixed: the travel line in the plan showed an empty box instead of an arrow.
 - `/rb shots` shows each window in turn with example data (a turn-in round with a zeppelin, sample notes and macros) and takes a screenshot of it, for the addon page. Your own plans, notes and macros are not shown and not changed.
 
 ## 1.0.0-beta1

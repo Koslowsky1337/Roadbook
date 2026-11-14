@@ -387,7 +387,7 @@ function ns.Build_plans(panel, tab)
                 row.text:ClearAllPoints()
                 row.text:SetPoint("LEFT", row.box, "RIGHT", 4, 0)
                 row.text:SetPoint("RIGHT", row.where, "LEFT", -6, 0)
-                row.text:SetText("→ " .. st.travel.title)
+                row.text:SetText("» " .. st.travel.title)   -- „→“ fehlt in der Spielschrift
                 if st.travel.skipped then row.text:SetTextColor(0.4, 0.4, 0.4) else row.text:SetTextColor(0.4, 0.85, 1) end
                 row.where:SetText(st.travel.skipped and L["skipped"] or L["on the way"])
                 return

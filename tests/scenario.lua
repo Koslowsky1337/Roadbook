@@ -755,7 +755,12 @@ check(ns.C.done["p:1413:50.0:50.0"] == nil, "Neuer Schritt am alten Ort ist offe
 
 -- Export / Import
 local text = ns.ExportPlan(p8)
-check(text:find("^RB1 Alle%-Test\nmode=all\n") and text:find("step|type=goto|map=1413|x=52|y=50|title=Nah", 1, true), "Export: " .. text)
+check(text:find("^RB1 Alle%-Test\nmode=all\n") and text:find("step;type=goto;map=1413;x=52;y=50;title=Nah", 1, true), "Export: " .. text)
+check(not text:find("|", 1, true), "Export ohne „|“ (WoW liest |t und |n in Textfeldern als Steuerzeichen)")
+local tricky = ns.ImportText(ns.ExportPlan({ title = "A;B|C", steps = { ns.NormalizeStep({ type = "goto", map = 1413, x = 1, y = 2, title = "x;y|z", note = "n1\nn2" }) } }))
+check(tricky and tricky.title == "A;B|C" and tricky.steps[1].title == "x;y|z" and tricky.steps[1].note == "n1\nn2", "Sonderzeichen überstehen Export und Import")
+local pasted = ns.ImportText("RB1 Eingefügt\nstep||type=goto||map=1413||x=5||y=6||title=Doppelstrich")
+check(pasted and pasted.steps[1].title == "Doppelstrich" and pasted.steps[1].x == 5, "Alte Fassung mit „|“ wird weiter gelesen, auch als „||“ aus dem Textfeld")
 local back = ns.ImportText(text)
 check(back and back.source == "eigen" and #back.steps == 2 and ns.PlanMode(back) == "alle" and back.steps[2].title == "Fern", "Export und Import ergeben denselben Plan")
 local imp = ns.ImportText("RB1 Geteilt | mit Strich\nmode=route\nnote=Zeile 1\\nZeile 2\n"
