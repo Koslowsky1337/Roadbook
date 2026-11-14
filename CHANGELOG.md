@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-beta2
 
 - Fixed: exported plans were garbled in the copy window, so sharing did not work. The game reads `|t`, `|n` and similar as control codes in text boxes, and the export used `|` as separator. The export now uses `;`. Text exported with 1.0.0-beta1 can still be imported.
 - Fixed: the travel line in the plan showed an empty box instead of an arrow.

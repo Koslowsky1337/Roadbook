@@ -41,6 +41,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Aus Leatrix Maps übernommen, im Spiel noch nicht abgelaufen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande (laut Leatrix nur Horde) und alle Allianz-Linien samt Tiefenbahn und Feralas-Fähre. Wenn du dort vorbeikommst: stimmt der Anleger?
 
 **Import/Export**
+- [ ] „Export“ zeigt Zeilen mit `step;type=…;title=…` – vollständig lesbar, kein `stepype` oder `itle` (das war der Fehler in Beta 1).
 - [ ] Plan wählen → „Export“ → Text kopieren → „Plan importieren“ → einfügen → derselbe Plan entsteht als eigener.
 - [ ] `/way Durotar 53.5 9.0 Test` und `/way 50 50` ins Importfenster einfügen: es entsteht ein Plan mit zwei Punkten.
 
@@ -71,6 +72,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [x] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.
 - [x] Erste Alpha: Tag `v1.0.0-alpha1` (14.11.2026). Auf CurseForge unter *Files* prüfen: Datei ist da und als Alpha markiert, Spielversion „Forever“, im Zip kein `tests`, kein `media`, keine `.md`; in der TOC steht `1.0.0-alpha1`.
 - [x] Beta: Tag `v1.0.0-beta1` (14.11.2026). Wie bei der Alpha auf CurseForge unter *Files* prüfen; im Zip darf `CURSEFORGE.md` jetzt nicht mehr liegen.
+- [x] Beta 2: Tag `v1.0.0-beta2` (15.11.2026) – behebt den verstümmelten Plan-Export.
 - [ ] Vor jedem weiteren Tag: im `CHANGELOG.md` oben einen Abschnitt mit der neuen Version anlegen.
 - [ ] Erst nach dem Beta-Test: Tag `v1.0.0` (ohne „beta“ = Release, nur das erscheint in der CurseForge-App).
 
