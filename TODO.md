@@ -57,9 +57,16 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 
 ## 5. Veröffentlichung
 
-- [ ] Screenshots machen (Liste steht im README unter „Screenshots“).
+- [ ] Screenshots für die CurseForge-Gallery machen:
+  1. Reiter Pläne mit geladener Abgaberunde
+  2. Tracker unter der Minimap mit Flughinweis und TomTom-Pfeil
+  3. Chatzeile am Flugmeister („Flieg nach …“)
+  4. Fenster „Wegbeschreibung“
+  5. Reiter Notizen mit der Kurzanleitung
+  6. Makro-Bibliothek mit einem geänderten Makro
+  7. Importfenster
 - [ ] CurseForge-Projekt anlegen: Name **Roadbook**, Logo `media/logo.png`, Lizenz MIT, Kategorie Quests & Leveling (zusätzlich Map & Minimap), Spielversion **Forever**. Summary und Description: siehe unten.
-- [ ] Auf der Projektseite unter *Relations* prüfen, dass **TomTom** und **QuestieDB** als *Required Dependency* stehen (kommt aus `.pkgmeta`; falls nicht, von Hand eintragen).
+- [ ] Auf der Projektseite unter *Relations* **TomTom** und **QuestieDB** als *Required Dependency* eintragen bzw. prüfen (kommt aus `.pkgmeta`; falls nicht, von Hand eintragen).
 - [ ] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.
 - [ ] `CHANGELOG.md`: Überschrift „Unreleased“ in `1.0.0-beta1` umbenennen.
 - [ ] Tag `v1.0.0-beta1` setzen und pushen. Im Zip prüfen: kein `tests`, kein `media`, keine `.md`; in der TOC steht die Tag-Version.
@@ -68,7 +75,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 ### CurseForge-Texte
 
 - **Summary:** Turns your quest log into a turn-in route ordered by travel time, with TomTom waypoints, flight paths, a notebook and a macro library.
-- **Description:** den Inhalt von `README.md` einfügen (Englisch steht oben, Deutsch darunter). Den Abschnitt „Screenshots (to add on CurseForge)“ dabei weglassen.
+- **Description:** den Inhalt von `CURSEFORGE.md` einfügen (Editor auf Markdown stellen). `README.md` ist die Fassung für GitHub.
 
 ## Arbeitsweise
 

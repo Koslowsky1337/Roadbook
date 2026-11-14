@@ -1,5 +1,7 @@
 # Roadbook
 
+![Roadbook logo](media/logo.png)
+
 **Ten quests ready to turn in, scattered over three zones? Roadbook puts them in the fastest order and points the way.**
 
 Roadbook builds a turn-in round from your quest log, sorts it by travel time and drives the TomTom arrow from stop to stop. It knows which flight points you have discovered, sends you to the flight master when flying is faster, and tells you where to fly. It also comes with a notebook and a macro library.
@@ -29,6 +31,10 @@ Roadbook builds a turn-in round from your quest log, sorts it by travel time and
 Both are separate addons and are **not** included. Roadbook only calls them while the game runs.
 
 Game version: WoW Forever (Interface 16001).
+
+## Installation
+
+Install Roadbook with the CurseForge app, or download a release, unpack it and put the `Roadbook` folder into `Interface\AddOns`. Install TomTom and QuestieDB the same way.
 
 ## Commands
 
@@ -89,16 +95,6 @@ return {
 ```
 
 The text is evaluated as data only (empty environment). Content from a pack is read-only in game; editing a plan turns it into your own copy.
-
-## Screenshots (to add on CurseForge)
-
-1. Plans tab with a loaded turn-in round
-2. Tracker below the minimap with a flight hint and the TomTom arrow
-3. Chat line at the flight master ("Fly to …")
-4. Route description window
-5. Notes tab with the quick guide
-6. Macro library with a changed macro
-7. Import window
 
 ---
 
