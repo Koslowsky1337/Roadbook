@@ -35,6 +35,7 @@ ns.BUILTIN_NOTES = {
             L["TRACKER (below the minimap)"],
             L["- Shows the next step with its distance and – if faster – the flight master before it."],
             L["- “Skip” skips it. A left-click on the tracker sets waypoints and arrow again."],
+            L["- The way to a flight master or dock shows as its own line in the plan; “Skip” or a right-click skips it first."],
             L["- Plus/minus expands it: next steps and quests ready to turn in that the plan lacks."],
             L["- Move: drag with the left mouse button. Show/hide: /rb tracker"],
             "",

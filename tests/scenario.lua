@@ -639,6 +639,15 @@ LOG = {}
 ns.CheckTravel(); RunTimers()
 check(TomTom.arrow.title:find("Flugmeister", 1, true), "Weg bleibt stabil")
 check(TomTom.arrowTitle == "Flugmeister Thunder Bluff – Flug nach Sonnenfels", "Pfeiltext nennt auch das Flugziel: " .. tostring(TomTom.arrowTitle))
+-- Reise-Abschnitt steht im Plan und lässt sich überspringen (Punkt liegt nicht immer genau am Anleger)
+check(ns.TravelRow() and not ns.TravelRow().skipped and ns.TravelRow().title:find("Flug nach Sonnenfels", 1, true), "Reise-Abschnitt als Zeile im Plan")
+local legStep = ns.wp.targetKey
+ns.SkipCurrentStep(); RunTimers()
+check(ns.travel == nil and TomTom.arrow.title == "Tammra" and ns.TravelRow() and ns.TravelRow().skipped,
+      "„Weiter“ überspringt zuerst den Reise-Abschnitt: " .. tostring(TomTom.arrow and TomTom.arrow.title))
+check(ns.StepState(ns.CurrentStep(ns.ActivePlan()), ns.ActivePlan().id) ~= "skipped", "Der Schritt selbst bleibt offen")
+ns.ToggleTravelSkip(legStep); RunTimers()
+check(ns.travel and TomTom.arrow.title:find("Flugmeister", 1, true) and not ns.TravelRow().skipped, "Reise-Abschnitt wieder aufgenommen")
 -- Ankunft beim Flugmeister + Flugkarte
 PLAYER = { map = 9001, x = 0.5, y = 0.5 }
 TomTom.arrow.callbacks.distance[15]("distance", TomTom.arrow, 15, 10, 20)

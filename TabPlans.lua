@@ -204,6 +204,10 @@ function ns.Build_plans(panel, tab)
         row:SetScript("OnClick", function(self, button)
             local plan, step = self.plan, self.step
             if ns.planEditId == plan.id then return end
+            if step.travel then
+                if button == "RightButton" then ns.ToggleTravelSkip(step.travel.stepKey) end
+                return
+            end
             if button == "RightButton" then ns.ToggleSkip(plan, step)
             elseif IsShiftKeyDown() then ns.ToggleDone(step)
             else ns.FocusStep(plan, step) end
@@ -211,6 +215,13 @@ function ns.Build_plans(panel, tab)
         row:SetScript("OnEnter", function(self)
             local st = self.step
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            if st.travel then
+                GameTooltip:AddLine(st.travel.title, 1, 0.82, 0, true)
+                GameTooltip:AddLine(L["Travel leg: Roadbook sends you here first because that is faster."], 1, 1, 1, true)
+                GameTooltip:AddLine(L["Right-click: skip it – the arrow then points straight to the step. Right-click again brings it back."], 0.8, 0.8, 0.8, true)
+                GameTooltip:Show()
+                return
+            end
             GameTooltip:AddLine(ns.StepTitle(st), 1, 0.82, 0, true)
             local label = ns.STEP_LABEL[st.type] or ""
             if st.quest then label = label .. (L[" (quest %d)"]):format(st.quest) end
@@ -360,8 +371,29 @@ function ns.Build_plans(panel, tab)
         noteHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
         local cur = active and ns.CurrentStep(plan) or nil
-        stepList:SetData(plan.steps, function(row, st, i)
+        -- Reise-Abschnitt (Flugmeister/Anleger) als eigene Zeile vor seinem Schritt
+        local rows, travel, number = {}, (active and not editing) and ns.TravelRow() or nil, 0
+        for _, st in ipairs(plan.steps) do
+            if travel and travel.stepKey == st.key then rows[#rows + 1] = { travel = travel } end
+            rows[#rows + 1] = st
+        end
+        stepList:SetData(rows, function(row, st)
             row.plan, row.step = plan, st
+            if st.travel then
+                row.selected:SetShown(not st.travel.skipped)
+                row.box:SetTexture(ns.TEX.avail); row.check:Hide()
+                row.box:SetDesaturated(st.travel.skipped and true or false)
+                row.up:Hide(); row.down:Hide(); row.del:Hide(); row.where:Show()
+                row.text:ClearAllPoints()
+                row.text:SetPoint("LEFT", row.box, "RIGHT", 4, 0)
+                row.text:SetPoint("RIGHT", row.where, "LEFT", -6, 0)
+                row.text:SetText("→ " .. st.travel.title)
+                if st.travel.skipped then row.text:SetTextColor(0.4, 0.4, 0.4) else row.text:SetTextColor(0.4, 0.85, 1) end
+                row.where:SetText(st.travel.skipped and L["skipped"] or L["on the way"])
+                return
+            end
+            number = number + 1
+            local i = number
             local state, detail = ns.StepState(st, plan.id)
             local isCur = cur and cur.key == st.key
             row.selected:SetShown(isCur and true or false)

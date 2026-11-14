@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The way to a flight master or dock now shows as its own line in the plan. "Skip" (tracker button, `/rb skip`) or a right-click on that line skips it first, so the arrow points straight to the step; a second right-click brings it back. Useful when a dock or flight master is not exactly where Roadbook expects it.
 - The TomTom arrow at a flight master now also names where to fly ("Flight master Thunder Bluff – Flight to Sun Rock Retreat"), as the map pin already did. If a zeppelin or boat follows, it is named too.
 
 ## 1.0.0-alpha1

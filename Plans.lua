@@ -281,7 +281,42 @@ function ns.ToggleDone(step)
     ns.Refresh()
 end
 
+-- Reise-Abschnitt (Flugmeister/Anleger) überspringen bzw. wieder aufnehmen: der Pfeil
+-- geht dann direkt zum Schritt. Nötig, wenn der Punkt nicht genau am Anleger liegt
+-- und deshalb nicht von selbst verschwindet.
+function ns.ToggleTravelSkip(stepKey)
+    local key = "travel:" .. tostring(stepKey)
+    if ns.wp.suppressed[key] then
+        ns.wp.suppressed[key] = nil
+        ns.wp.skippedTravel = nil
+        ns.Log("I", "route", "Travel leg resumed for %s", tostring(stepKey))
+    else
+        local tr = ns.travel
+        if not (tr and tr.stepKey == stepKey) then return false end
+        local title = ns.StepTitle(tr.waypoint)
+        ns.wp.suppressed[key] = true
+        ns.wp.skippedTravel = { stepKey = stepKey, title = title }
+        ns.Print((L["Travel leg skipped: %s. The arrow now points straight to the step."]):format(title))
+        ns.Log("I", "route", "Travel leg skipped: %s", tr.text)
+    end
+    ns.wp.arrowKey = nil
+    ns.Refresh()
+    return true
+end
+
+-- Für die Anzeige im Plan: der Reise-Abschnitt vor einem Schritt (auch der übersprungene)
+function ns.TravelRow()
+    local tr = ns.travel
+    if tr and tr.waypoint then return { stepKey = tr.stepKey, title = ns.StepTitle(tr.waypoint) } end
+    local sk = ns.wp.skippedTravel
+    if sk and ns.wp.suppressed["travel:" .. tostring(sk.stepKey)] then
+        return { stepKey = sk.stepKey, title = sk.title, skipped = true }
+    end
+end
+
 function ns.SkipCurrentStep()
+    -- erst der Weg zum Flugmeister/Anleger, beim nächsten Mal der Schritt selbst
+    if ns.travel and ns.ToggleTravelSkip(ns.travel.stepKey) then return end
     local plan = ns.ActivePlan()
     local cur = plan and ns.CurrentStep(plan)
     if not cur then ns.Print(L["No open step in the active plan."]) return end
@@ -386,6 +421,7 @@ function ns.ResetPlan(plan)
     for _, st in ipairs(plan.steps) do
         if ns.C.done[st.key] then ns.C.done[st.key] = nil; ticks = ticks + 1 end
         ns.wp.suppressed[st.key] = nil
+        ns.wp.suppressed["travel:" .. st.key] = nil
     end
     ns.wp.arrowKey = nil
     if ns.C.activePlan == plan.id then ns.lastCurrentKey = nil end
@@ -585,7 +621,10 @@ function ns.InitTomTom()
             -- Reise-Punkt (Flugmeister/Anleger) von Hand entfernt: für diesen Schritt zu Fuß
             ns.wp.uids[uid] = nil
             ns.wp.travelUid, ns.wp.travelSig = nil, nil
-            if ns.wp.targetKey then ns.wp.suppressed["travel:" .. ns.wp.targetKey] = true end
+            if ns.wp.targetKey then
+                ns.wp.suppressed["travel:" .. ns.wp.targetKey] = true
+                ns.wp.skippedTravel = { stepKey = ns.wp.targetKey, title = uid.title }
+            end
             ns.wp.arrowKey = nil
             ns.Log("I", "tomtom", "Travel waypoint removed by hand – the arrow goes straight to the step: %s", tostring(uid.title))
             ns.ScheduleRefresh()
