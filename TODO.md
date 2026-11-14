@@ -65,11 +65,11 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
   5. Reiter Notizen mit der Kurzanleitung
   6. Makro-Bibliothek mit einem geänderten Makro
   7. Importfenster
-- [ ] CurseForge-Projekt anlegen: Name **Roadbook**, Logo `media/logo.png`, Lizenz MIT, Kategorie Quests & Leveling (zusätzlich Map & Minimap), Spielversion **Forever**. Summary und Description: siehe unten.
+- [x] CurseForge-Projekt anlegen: Name **Roadbook**, Logo `media/logo.png`, Lizenz MIT, Kategorie Quests & Leveling (zusätzlich Map & Minimap), Spielversion **Forever**. Summary und Description: siehe unten.
 - [ ] Auf der Projektseite unter *Relations* **TomTom** und **QuestieDB** als *Required Dependency* eintragen bzw. prüfen (kommt aus `.pkgmeta`; falls nicht, von Hand eintragen).
-- [ ] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.
-- [ ] `CHANGELOG.md`: Überschrift „Unreleased“ in `1.0.0-beta1` umbenennen.
-- [ ] Tag `v1.0.0-beta1` setzen und pushen. Im Zip prüfen: kein `tests`, kein `media`, keine `.md`; in der TOC steht die Tag-Version.
+- [x] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.
+- [x] Erste Alpha: Tag `v1.0.0-alpha1` (14.11.2026). Auf CurseForge unter *Files* prüfen: Datei ist da und als Alpha markiert, Spielversion „Forever“, im Zip kein `tests`, kein `media`, keine `.md`; in der TOC steht `1.0.0-alpha1`.
+- [ ] Vor jedem weiteren Tag: im `CHANGELOG.md` oben einen Abschnitt mit der neuen Version anlegen. Nächster Schritt nach den Spieltests: `v1.0.0-beta1`.
 - [ ] Erst nach dem Beta-Test: Tag `v1.0.0` (ohne „beta“ = Release, nur das erscheint in der CurseForge-App).
 
 ### CurseForge-Texte

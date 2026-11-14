@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (planned as 1.0.0-beta1)
+## 1.0.0-alpha1
 
 First public version. Please report anything odd: https://github.com/Koslowsky1337/Roadbook/issues
 
