@@ -31,6 +31,8 @@ ns.BUILTIN_NOTES = {
             L["- Remove the travel waypoint in TomTom = walk for this step. “Reset waypoints” brings it back."],
             L["- Roadbook remembers your flight points when you visit a flight master."],
             L["- Undiscovered flight master nearby? Roadbook tells you once; /rb fm sets a waypoint."],
+            L["- An undiscovered flight master that is almost on your way becomes a stop of its own, and you can fly from it."],
+            L["- On a zeppelin or boat the dock waypoint disappears by itself once you are carried along."],
             "",
             L["TRACKER (below the minimap)"],
             L["- Shows the next step with its distance and – if faster – the flight master before it."],

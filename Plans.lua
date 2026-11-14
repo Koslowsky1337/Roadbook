@@ -937,6 +937,7 @@ function ns.ResetWaypoints(quiet)
     wipe(ns.wp.uids); wipe(ns.wp.byKey); wipe(ns.wp.suppressed)
     ns.wp.arrowKey, ns.wp.travelUid, ns.wp.travelSig, ns.wp.travelArrived = nil, nil, nil, nil
     ns.travel = nil
+    ns.wp.riding = nil
     ns.wp.forceArrow = true
     ns.Refresh()
     local n = countKeys(ns.wp.uids)
@@ -1177,20 +1178,33 @@ local function taxiNodesFor(map)
 end
 ns.KnownTaxiNodes = taxiNodesFor
 
+-- Ist die Liste der bekannten Flugpunkte auf diesem Kontinent vollständig?
+function ns.TaxiListComplete(map)
+    local cont = continentMap(map)
+    return type(ns.C.taxiSeen) == "table" and cont and ns.C.taxiSeen[cont] and true or false
+end
+
 -- Die nächsten bekannten Flugpunkte eines Punkts (zu Fuß), zwischengespeichert
 local function nearTaxi(p)
     local ver = ns.taxiVersion .. ":" .. runSpeed()
-    if p._near and p._nearVer == ver then return p._near end
-    local all = taxiNodesFor(p.map)
-    local scored = {}
-    for _, n in ipairs(all) do
-        if n.c == p.c then table.insert(scored, { node = n, t = walkTime(p, n) }) end
+    if p._near and p._nearVer == ver then return p._near, p._nearNew end
+    local all, unknown = taxiNodesFor(p.map)
+    local function nearest(list, new)
+        local scored = {}
+        for _, n in ipairs(list) do
+            if n.c == p.c then table.insert(scored, { node = n, t = walkTime(p, n), new = new }) end
+        end
+        table.sort(scored, function(a, b) return a.t < b.t end)
+        local out = {}
+        for i = 1, math.min(NEAR_TAXI, #scored) do out[i] = scored[i] end
+        return out
     end
-    table.sort(scored, function(a, b) return a.t < b.t end)
-    local out = {}
-    for i = 1, math.min(NEAR_TAXI, #scored) do out[i] = scored[i] end
-    p._near, p._nearVer = out, ver
-    return out
+    local out = nearest(all)
+    -- Unbekannte Flugmeister taugen als Abflugpunkt: hinlaufen, kennenlernen, losfliegen.
+    -- Nur wo die Liste verlässlich ist (auf dem Kontinent wurde schon eine Flugkarte geöffnet).
+    local outNew = ns.TaxiListComplete(p.map) and nearest(unknown, true) or {}
+    p._near, p._nearNew, p._nearVer = out, outNew, ver
+    return out, outNew
 end
 
 ---------------------------------------------------------------------------
@@ -1266,15 +1280,20 @@ end
 ---------------------------------------------------------------------------
 local function sameContinent(a, b)
     local best, how, via = walkTime(a, b), "lauf", nil
-    local na, nb = nearTaxi(a), nearTaxi(b)
-    for _, A in ipairs(na) do
+    local na, naNew = nearTaxi(a)
+    local nb = nearTaxi(b)
+    local function try(A)
         for _, B in ipairs(nb) do
             if A.node ~= B.node then
                 local t = A.t + FLY_OVERHEAD + dist(A.node, B.node) / FLY_SPEED + B.t
-                if t < best then best, how, via = t, "flug", { from = A.node, to = B.node, walkTo = A.t, walkFrom = B.t } end
+                if t < best then
+                    best, how, via = t, "flug", { from = A.node, to = B.node, walkTo = A.t, walkFrom = B.t, new = A.new }
+                end
             end
         end
     end
+    for _, A in ipairs(na) do try(A) end
+    for _, A in ipairs(naNew) do try(A) end   -- Abflug bei einem Flugmeister, den du dabei kennenlernst
     return best, how, via
 end
 
@@ -1337,6 +1356,7 @@ local function hopSig(hop)
     if hop.kind == "flug" then
         return ("flug:%s>%s"):format(tostring(hop.from.id or hop.from.name), tostring(hop.to.id or hop.to.name))
     end
+    if hop.kind == "neu" then return "neu:" .. tostring(hop.node.id or hop.node.name) end
     return "schiff:" .. tostring(hop.name)
 end
 
@@ -1344,11 +1364,11 @@ end
 local function firstHop(from, to)
     local t, how, via = ns.LegCost(from, to)
     if how == "flug" and via then
-        return t, { kind = "flug", from = via.from, to = via.to }
+        return t, { kind = "flug", from = via.from, to = via.to, new = via.new }
     elseif how == "schiff" and via then
         local _, how2, via2 = sameContinent(from, via.a)
         if how2 == "flug" and via2 then
-            return t, { kind = "flug", from = via2.from, to = via2.to, after = via.name }
+            return t, { kind = "flug", from = via2.from, to = via2.to, after = via.name, new = via2.new }
         end
         return t, { kind = "schiff", dock = via.a, dockMap = via.am, name = via.name }
     end
@@ -1357,8 +1377,9 @@ end
 
 -- Was kostet es, dem gewählten Abschnitt von hier aus weiter zu folgen?
 local function hopCost(from, to, hop)
-    local start = hop.kind == "flug" and hop.from or hop.dock
+    local start = (hop.kind == "flug" and hop.from) or (hop.kind == "neu" and hop.node) or hop.dock
     if not start or start.c ~= from.c then return math.huge end
+    if hop.kind == "neu" then return walkTime(from, hop.node) + (ns.LegCost(hop.node, to) or NO_LINK) end
     if hop.kind == "flug" then
         return walkTime(from, hop.from) + FLY_OVERHEAD + dist(hop.from, hop.to) / FLY_SPEED + (ns.LegCost(hop.to, to) or NO_LINK)
     end
@@ -1372,10 +1393,17 @@ local function travelInfo(step, hop, cost, saves)
         local w = nodeMapPos(hop.from)
         if not w then return nil end
         local dest = hop.to.short .. (hop.after and (L[", then "] .. hop.after) or "")
-        tr.text = (L["First to the flight master in %s, fly to %s%s"]):format(hop.from.short, dest, spare)
+        tr.text = (hop.new and L["First to the undiscovered flight master in %s (you learn it on the way), fly to %s%s"]
+            or L["First to the flight master in %s, fly to %s%s"]):format(hop.from.short, dest, spare)
         tr.arrive = (L["Flight master %s: fly to |cffffffff%s|r%s."]):format(hop.from.short, hop.to.name,
             hop.after and (L[", then "] .. hop.after) or "")
         tr.waypoint = { map = w.map, x = w.x, y = w.y, title = L["Flight master "] .. hop.from.short, text = L["Flight to "] .. hop.to.short .. (hop.after and (L[", then "] .. hop.after) or "") }
+    elseif hop.kind == "neu" then
+        local w = nodeMapPos(hop.node)
+        if not w then return nil end
+        tr.text = (L["Undiscovered flight master %s on the way (+%s) – pick it up"]):format(hop.node.short, fmtTime(hop.extra))
+        tr.arrive = (L["Flight master %s: open the flight map to learn this flight point."]):format(hop.node.short)
+        tr.waypoint = { map = w.map, x = w.x, y = w.y, title = L["Flight master "] .. hop.node.short, text = L["undiscovered – pick it up"] }
     else
         local m = hop.dockMap
         if not m then return nil end
@@ -1386,9 +1414,28 @@ local function travelInfo(step, hop, cost, saves)
     return tr
 end
 
+-- Unbekannter Flugmeister, der kaum Umweg kostet: mitnehmen. Ihn zu kennen spart später
+-- mehr, als der Umweg jetzt kostet.
+local PICKUP_MAX = 120      -- Sekunden Umweg, die das wert ist
+
+local function pickupNode(from, to)
+    if not ns.TaxiListComplete(from.map) then return nil end
+    local _, unknown = taxiNodesFor(from.map)
+    local direct = walkTime(from, to)
+    local node, least
+    for _, n in ipairs(unknown) do
+        if n.c == from.c and n.c == to.c then
+            local extra = walkTime(from, n) + walkTime(n, to) - direct
+            if extra <= PICKUP_MAX and (not least or extra < least) then node, least = n, extra end
+        end
+    end
+    return node, least
+end
+
 -- Reiseweg für einen Schritt ab deinem Standort (nil = zu Fuß bzw. unbekannt)
 function ns.ComputeTravel(step)
     if not (step and step.map) then return nil end
+    if ns.wp.riding then return nil end   -- auf dem Zeppelin/Schiff: der Anleger ist erledigt
     local cur = ns.travel and ns.travel.stepKey == step.key and ns.travel or nil
     if UnitOnTaxi and UnitOnTaxi("player") then return cur end   -- im Flug nichts ändern
     local from, to = ns.PlayerPos(), ns.StepPos(step)
@@ -1398,8 +1445,13 @@ function ns.ComputeTravel(step)
     local walk = (from.c == to.c) and (walkTime(from, to) + ((from.map ~= to.map) and ZONE_CHANGE or 0)) or nil
     -- Flug nur empfehlen, wenn er sich wirklich lohnt
     if hop and walk and walk - best < math.max(MIN_SAVING, walk * MIN_SAVING_SHARE) then hop, best = nil, walk end
+    -- Zu Fuß unterwegs: liegt ein unbekannter Flugmeister fast am Weg?
+    if not hop and walk then
+        local node, extra = pickupNode(from, to)
+        if node then hop, best = { kind = "neu", node = node, extra = extra }, walk + extra end
+    end
     -- Gewählten Weg behalten, solange der neue nicht klar besser ist
-    if cur and (not hop or hopSig(hop) ~= cur.sig) then
+    if cur and cur.hop.kind ~= "neu" and (not hop or hopSig(hop) ~= cur.sig) then
         local keep = hopCost(from, to, cur.hop)
         if keep <= best + math.max(KEEP_MARGIN, best * 0.1) then
             hop, best = cur.hop, keep
@@ -1407,6 +1459,36 @@ function ns.ComputeTravel(step)
     end
     if not hop then return nil end
     return travelInfo(step, hop, best, walk and (walk - best) or nil)
+end
+
+-- An Bord erkannt: du wirst bewegt, läufst aber nicht selbst. Dann ist der Anleger
+-- erledigt – der Punkt verschwindet und der Pfeil zeigt zum Ziel. Sobald du wieder
+-- selbst läufst (angekommen), wird der Weg neu berechnet.
+local lastSpot, carried = nil, 0
+
+function ns.CheckRiding()
+    local here = ns.PlayerPos()
+    local speed = GetUnitSpeed and num((GetUnitSpeed("player")))
+    if ns.wp.riding then
+        if speed and speed > 0 then
+            ns.wp.riding = nil
+            ns.Log("I", "route", "Left the zeppelin or boat – travel route is calculated again.")
+            ns.ScheduleRefresh()
+        end
+    elseif here and lastSpot and here.c == lastSpot.c and speed == 0 and ns.travel and ns.travel.hop.kind == "schiff"
+           and not (UnitOnTaxi and UnitOnTaxi("player")) and dist(here, lastSpot) > 6 then
+        carried = carried + 1
+        if carried >= 2 then   -- zwei Messungen hintereinander: kein Rückstoß, kein Aufzug
+            carried = 0
+            ns.wp.riding = true
+            ns.Print((L["On board (%s) – the arrow now points to your destination."]):format(ns.travel.hop.name))
+            ns.Log("I", "route", "On board detected: %s", ns.travel.hop.name)
+            ns.ScheduleRefresh()
+        end
+    else
+        carried = 0
+    end
+    lastSpot = here
 end
 
 -- Alle 2 Sekunden: hat sich der beste Reiseweg geändert? Dann neu abgleichen.
@@ -1468,6 +1550,7 @@ do
         if acc < 2 then return end
         acc = 0
         if ns.C and ns.Safe then
+            ns.Safe("travel", ns.CheckRiding)
             ns.Safe("travel", ns.CheckTravel)
             ns.Safe("travel", ns.CheckNewTaxi)
         end
@@ -1599,7 +1682,7 @@ function ns.LegText(a, b)
     local t, how, via = ns.LegCost(a, b)
     if not t then return nil end
     if how == "flug" and via then
-        return (L["Flight %s → %s"]):format(via.from.short, via.to.short), t, how
+        return (L["Flight %s → %s"]):format(via.from.short, via.to.short) .. (via.new and L[" (new flight master)"] or ""), t, how
     elseif how == "schiff" and via then
         return via.name, t, how
     elseif how == "fern" then

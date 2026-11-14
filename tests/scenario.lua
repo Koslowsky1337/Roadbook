@@ -787,6 +787,43 @@ ns.HandleSlash("fm")
 check(joined(TT_List()):find("Flugmeister Windschere|Roadbook flight master", 1, true), "/rb fm setzt einen Wegpunkt: " .. joined(TT_List()))
 fire("QUEST_LOG_UPDATE"); RunTimers()
 check(joined(TT_List()):find("Flugmeister Windschere", 1, true), "Der Abgleich lässt den Flugmeister-Punkt stehen")
+-- Unbekannter Flugmeister als Abflugpunkt: hinlaufen, kennenlernen, losfliegen
+-- (Windschere, Nummer 3, ist unbekannt; auf dem Kontinent wurde schon eine Flugkarte geöffnet)
+ns.DeactivatePlan(); RunTimers()
+PLAYER = { map = 9000, x = 0.53, y = 0.47 }
+local uText, _, uHow = ns.LegText(ns.PlayerPos(), ns.WorldPos(9001, 50, 50))
+check(uHow == "flug" and uText == "Flug Windschere → Thunder Bluff (neuer Flugmeister)", "Abflug beim unbekannten Flugmeister: " .. tostring(uText))
+ns.C.plans["p820"] = { id = "p820", title = "Neu entdecken", mode = "route", created = 10, steps = {
+    { type = "goto", map = 9001, x = 50, y = 50, title = "Stadt" } } }
+ns.ActivatePlan("e:p820"); RunTimers()
+check(ns.travel and ns.travel.hop.new and ns.travel.text:find("unbekannten Flugmeister Windschere", 1, true)
+      and TomTom.arrowTitle == "Flugmeister Windschere – Flug nach Thunder Bluff", "Pfeil zum unbekannten Flugmeister: " .. tostring(ns.travel and ns.travel.text))
+ns.C.taxiSeen = nil; ns.taxiVersion = ns.taxiVersion + 1
+check(select(3, ns.LegText(ns.PlayerPos(), ns.WorldPos(9001, 50, 50))) ~= nil
+      and not tostring((ns.LegText(ns.PlayerPos(), ns.WorldPos(9001, 50, 50)))):find("Windschere", 1, true),
+      "Ohne geöffnete Flugkarte wird kein unbekannter Flugmeister eingeplant")
+ns.C.taxiSeen = { [9000] = true }; ns.taxiVersion = ns.taxiVersion + 1
+ns.DeactivatePlan(); RunTimers()
+
+-- Unbekannter Flugmeister fast am Weg: mitnehmen; weit ab vom Weg: nicht
+PLAYER = { map = 9000, x = 0.50, y = 0.45 }
+ns.C.plans["p830"] = { id = "p830", title = "Am Weg", mode = "route", created = 11, steps = {
+    { type = "goto", map = 9002, x = 83.33, y = 60, title = "Hinterm Flugmeister" },
+    { type = "goto", map = 9002, x = 10, y = 10, title = "Ganz woanders" } } }
+ns.ActivatePlan("e:p830"); RunTimers()
+check(ns.travel and ns.travel.hop.kind == "neu" and TomTom.arrowTitle == "Flugmeister Windschere – unbekannt – mitnehmen",
+      "Flugmeister am Weg wird mitgenommen: " .. tostring(TomTom.arrowTitle))
+check(ns.TravelRow() and ns.TravelRow().title:find("mitnehmen", 1, true), "Mitnehmen steht als Zeile im Plan")
+ns.C.taxi[3] = true; ns.taxiVersion = ns.taxiVersion + 1           -- Flugkarte geöffnet: jetzt bekannt
+fire("ZONE_CHANGED_NEW_AREA"); RunTimers()
+check(ns.travel == nil and TomTom.arrow.title == "Hinterm Flugmeister", "Nach dem Kennenlernen weiter zum Ziel: " .. tostring(TomTom.arrow.title))
+ns.C.taxi[3] = nil; ns.taxiVersion = ns.taxiVersion + 1
+ns.ToggleDone(ns.GetPlan("e:p830").steps[1]); RunTimers()
+PLAYER = { map = 9000, x = 0.34, y = 0.34 }
+fire("ZONE_CHANGED_NEW_AREA"); RunTimers()
+check(not (ns.travel and ns.travel.hop.kind == "neu"), "Flugmeister weit ab vom Weg wird nicht eingeplant")
+ns.DeactivatePlan(); RunTimers()
+
 -- Zeppelin auf demselben Kontinent: schneller als der lange Fußweg
 MAPOFF[1420] = { 0, 0, 1000, 8 }; MAPOFF[1434] = { 0, 9000, 1000, 8 }
 ns.ClearRouteCache(); ns.taxiVersion = ns.taxiVersion + 1
@@ -801,10 +838,24 @@ ns.C.plans["p810"] = { id = "p810", title = "Süden", mode = "route", created = 
 ns.ActivatePlan("e:p810"); RunTimers()
 check(ns.travel and ns.travel.hop.kind == "schiff" and TomTom.arrow[1] == 1420
       and TomTom.arrowTitle == "Anleger – Zeppelin Undercity – Grom'gol", "Pfeil zuerst zum Zeppelin: " .. tostring(TomTom.arrowTitle))
+-- an Bord: du wirst bewegt, läufst aber nicht selbst -> Anleger-Punkt verschwindet von allein
+GetUnitSpeed = function() return 0 end
+LOG = {}
+ns.CheckRiding()
+PLAYER.x = PLAYER.x + 0.02; ns.CheckRiding()
+check(not ns.wp.riding, "Eine Messung reicht nicht (Rückstoß, Aufzug)")
+PLAYER.x = PLAYER.x + 0.02; ns.CheckRiding(); RunTimers()
+check(ns.wp.riding and ns.travel == nil and TomTom.arrow.title == "Weit im Süden" and joined(LOG):find("An Bord", 1, true),
+      "An Bord erkannt: Pfeil zum Ziel: " .. tostring(TomTom.arrow and TomTom.arrow.title))
+check(not joined(TT_List()):find("Anleger", 1, true), "Anleger-Punkt ist weg")
 -- angekommen: kein Zeppelin zurück, zu Fuß weiter
 PLAYER = { map = 1434, x = 0.32, y = 0.30 }
 fire("ZONE_CHANGED_NEW_AREA"); RunTimers()
 check(ns.travel == nil and TomTom.arrow.title == "Weit im Süden", "Nach der Fahrt zu Fuß zum Ziel: " .. tostring(TomTom.arrow and TomTom.arrow.title))
+GetUnitSpeed = function() return 7 end
+ns.CheckRiding(); RunTimers()
+check(not ns.wp.riding and ns.travel == nil, "Wieder selbst unterwegs: Fahrt beendet, kein Zeppelin zurück")
+GetUnitSpeed = nil
 ns.DeactivatePlan(); RunTimers()
 -- Zeppeline muss man nicht kennenlernen: auch ohne einen einzigen bekannten Flugpunkt
 local noTaxi = ns.C.taxi

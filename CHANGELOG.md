@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Undiscovered flight masters are now part of the route: if one is almost on your way (up to two minutes of detour) it becomes a stop of its own, and a flight can start at a flight master you learn on the way. Flights *to* an undiscovered flight point are still never recommended.
+- On a zeppelin or boat the dock waypoint now disappears by itself: when you are carried along without walking, the arrow switches to your destination.
 - Boat, zeppelin and tram stops now come from Leatrix Maps and QuestieDB. New: Deeprun Tram Stormwind ↔ Ironforge, the Feralas ferry to Feathermoon, Zephras Isle ↔ Alterac Mountains. Tanaris ↔ Riverglades is Horde only. Several stops moved slightly.
 - Alliance round trip Auberdine → Menethil Harbor → Southshore → Auberdine added, in that direction only. Zeppelins and boats never need to be discovered: every line of your faction always counts.
 - Zeppelins and boats are now also used within one continent when they are faster than walking, for example Undercity – Grom'gol instead of crossing the Eastern Kingdoms on foot. New lines: Undercity ↔ Grom'gol, Rut'theran ↔ Auberdine.
