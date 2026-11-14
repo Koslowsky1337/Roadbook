@@ -871,9 +871,10 @@ function ns.SyncWaypoints()
     if ns.travel and ns.wp.travelUid then
         local empty = tt.IsCrazyArrowEmpty and tt:IsCrazyArrowEmpty()
         if force or empty or ns.wp.arrowKey ~= "travel" then
-            tt:SetCrazyArrow(ns.wp.travelUid, ARRIVAL, ns.travel.waypoint.title)
+            -- Pfeiltext wie der Kartenpunkt: wohin es geht, nicht nur der Flugmeister
+            tt:SetCrazyArrow(ns.wp.travelUid, ARRIVAL, ns.StepTitle(ns.travel.waypoint))
             ns.wp.arrowKey, ns.wp.arrowUid = "travel", ns.wp.travelUid
-            ns.Log("D", "tomtom", "Arrow → %s", ns.travel.waypoint.title)
+            ns.Log("D", "tomtom", "Arrow → %s", ns.StepTitle(ns.travel.waypoint))
         end
     else
         ns.PointArrow(target, force or ns.wp.arrowKey == "travel")
@@ -1316,7 +1317,7 @@ local function travelInfo(step, hop, cost, saves)
         tr.text = (L["First to the flight master in %s, fly to %s%s"]):format(hop.from.short, dest, spare)
         tr.arrive = (L["Flight master %s: fly to |cffffffff%s|r%s."]):format(hop.from.short, hop.to.name,
             hop.after and (L[", then "] .. hop.after) or "")
-        tr.waypoint = { map = w.map, x = w.x, y = w.y, title = L["Flight master "] .. hop.from.short, text = L["Flight to "] .. hop.to.short }
+        tr.waypoint = { map = w.map, x = w.x, y = w.y, title = L["Flight master "] .. hop.from.short, text = L["Flight to "] .. hop.to.short .. (hop.after and (L[", then "] .. hop.after) or "") }
     else
         local m = hop.dockMap
         if not m then return nil end

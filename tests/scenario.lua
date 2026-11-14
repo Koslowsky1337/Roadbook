@@ -638,6 +638,7 @@ PLAYER = { map = 9001, x = 0.43, y = 0.43 }
 LOG = {}
 ns.CheckTravel(); RunTimers()
 check(TomTom.arrow.title:find("Flugmeister", 1, true), "Weg bleibt stabil")
+check(TomTom.arrowTitle == "Flugmeister Thunder Bluff – Flug nach Sonnenfels", "Pfeiltext nennt auch das Flugziel: " .. tostring(TomTom.arrowTitle))
 -- Ankunft beim Flugmeister + Flugkarte
 PLAYER = { map = 9001, x = 0.5, y = 0.5 }
 TomTom.arrow.callbacks.distance[15]("distance", TomTom.arrow, 15, 10, 20)

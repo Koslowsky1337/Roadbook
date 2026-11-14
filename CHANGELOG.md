@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The TomTom arrow at a flight master now also names where to fly ("Flight master Thunder Bluff – Flight to Sun Rock Retreat"), as the map pin already did. If a zeppelin or boat follows, it is named too.
+
 ## 1.0.0-alpha1
 
 First public version. Please report anything odd: https://github.com/Koslowsky1337/Roadbook/issues

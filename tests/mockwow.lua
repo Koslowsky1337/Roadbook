@@ -164,8 +164,8 @@ function TomTom:RemoveWaypoint(uid)
         if self.cbs.WaypointRemoved then self.cbs.WaypointRemoved("WaypointRemoved", uid) end
     end
 end
-function TomTom:SetCrazyArrow(uid)
-    self.arrow = uid
+function TomTom:SetCrazyArrow(uid, dist, title)
+    self.arrow, self.arrowTitle = uid, title
     if self.cbs.ArrowTargetChanged then self.cbs.ArrowTargetChanged("ArrowTargetChanged", uid) end
 end
 function TomTom:IsCrazyArrowEmpty() return self.arrow == nil end
