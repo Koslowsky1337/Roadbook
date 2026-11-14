@@ -365,3 +365,4 @@ L["Travel leg: Roadbook sends you here first because that is faster."] = "Reise-
 L["Right-click: skip it – the arrow then points straight to the step. Right-click again brings it back."] = "Rechtsklick: überspringen – der Pfeil zeigt dann direkt zum Schritt. Nochmal Rechtsklick holt ihn zurück."
 L["- The way to a flight master or dock shows as its own line in the plan; “Skip” or a right-click skips it first."] = "- Der Weg zum Flugmeister oder Anleger steht als eigene Zeile im Plan; „Weiter“ oder ein Rechtsklick überspringt ihn zuerst."
 L["%s · then %s"] = "%s · dann %s"
+L["Tram %s – %s"] = "Tiefenbahn %s – %s"

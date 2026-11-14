@@ -30,7 +30,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 
 **Zeppeline und Schiffe** (aus den Spieldaten bestätigt: Orgrimmar, Undercity, Grom'gol, Ratchet, Booty Bay)
 - [ ] Ziel auf dem anderen Kontinent: Pfeil zeigt zum Anleger, und der steht an der richtigen Stelle.
-- [ ] Nicht bestätigt, nur aus Pastime übernommen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande und alle Allianz-Linien (Stormwind, Auberdine, Menethil, Theramore, Dalaran). Wenn du dort vorbeikommst: stimmt der Anleger?
+- [ ] Aus Leatrix Maps übernommen, im Spiel noch nicht abgelaufen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande (laut Leatrix nur Horde) und alle Allianz-Linien samt Tiefenbahn und Feralas-Fähre. Wenn du dort vorbeikommst: stimmt der Anleger?
 
 **Import/Export**
 - [ ] Plan wählen → „Export“ → Text kopieren → „Plan importieren“ → einfügen → derselbe Plan entsteht als eigener.

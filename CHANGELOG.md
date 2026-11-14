@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Boat, zeppelin and tram stops now come from Leatrix Maps and QuestieDB. New: Deeprun Tram Stormwind ↔ Ironforge, the Feralas ferry to Feathermoon, Zephras Isle ↔ Alterac Mountains. Tanaris ↔ Riverglades is Horde only. Several stops moved slightly.
 - Alliance round trip Auberdine → Menethil Harbor → Southshore → Auberdine added, in that direction only. Zeppelins and boats never need to be discovered: every line of your faction always counts.
 - Zeppelins and boats are now also used within one continent when they are faster than walking, for example Undercity – Grom'gol instead of crossing the Eastern Kingdoms on foot. New lines: Undercity ↔ Grom'gol, Rut'theran ↔ Auberdine.
 - Fixed: before you had opened a flight map, every flight point counted as known, so flights to places you had never visited could be recommended. Now Roadbook recommends flights on a continent only after you have opened a flight map there.

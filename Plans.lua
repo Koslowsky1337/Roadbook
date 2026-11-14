@@ -971,7 +971,7 @@ end
 -- Koordinaten“. Jetzt kostet jeder Weg Sekunden:
 --   zu Fuß     Luftlinie × Umweg / Lauftempo
 --   Flug       zum nächsten BEKANNTEN Flugpunkt laufen + Flug + weiterlaufen
---   Zeppelin/Schiff zwischen Kontinenten (Anleger aus Pastime)
+--   Zeppelin/Schiff/Tiefenbahn (Haltestellen aus Leatrix Maps und QuestieDB)
 --   Gebietswechsel kosten etwas extra, damit ein Gebiet am Stück dran ist.
 -- Die Reihenfolge: nächster Halt zuerst, danach verbessert (2-opt + Umsetzen).
 ---------------------------------------------------------------------------
@@ -1194,31 +1194,43 @@ local function nearTaxi(p)
 end
 
 ---------------------------------------------------------------------------
--- Zeppeline und Schiffe zwischen den Kontinenten. Die Anleger sind dieselben
--- wie im Addon Pastime. Die Zeppelinmeister (Orgrimmar, Undercity, Grom'gol) und die
--- Schiffsmeister in Ratchet und Booty Bay stehen laut Spieldaten genau dort; die
--- übrigen Anleger sind im Spiel gemessen.
--- Zeppeline und Schiffe muss man nicht „kennenlernen“ (anders als Flugpunkte): alle
--- Linien der eigenen Fraktion zählen immer.
+-- Zeppeline, Schiffe und die Tiefenbahn. Man muss sie nicht „kennenlernen“
+-- (anders als Flugpunkte): alle Linien der eigenen Fraktion zählen immer.
+--
+-- Quellen: Leatrix Maps (Leatrix_Maps_Icons.lua: alle Haltestellen auf Forever
+-- mit Ziel, Fraktion und Fahrtrichtung) und QuestieDB (Standort der Zeppelin-
+-- und Schiffsmeister in Orgrimmar, Undercity, Grom'gol, Ratchet und Booty Bay).
+--
 -- { Karte, x, y, Karte, x, y, Fraktion (nil = alle), Art, Ort A, Ort B, nur A → B }
+-- Ein Ort als Zahl ist eine Karten-Nummer: der Name kommt dann vom Spiel.
 ---------------------------------------------------------------------------
-local ZEP, BOAT = L["Zeppelin %s – %s"], L["Boat %s – %s"]
+local ZEP, BOAT, TRAM = L["Zeppelin %s – %s"], L["Boat %s – %s"], L["Tram %s – %s"]
 local LINKS = {
+    -- Horde
     { 1411, 50.82, 13.54, 1420, 60.74, 58.87, "Horde", ZEP, "Orgrimmar", "Undercity" },
     { 1411, 50.69, 12.89, 1434, 31.43, 29.91, "Horde", ZEP, "Orgrimmar", "Grom'gol" },
     { 1420, 61.78, 59.18, 1434, 31.54, 29.36, "Horde", ZEP, "Undercity", "Grom'gol" },
-    { 1412, 33.40, 22.50, 2521, 57.98, 80.57, "Horde", ZEP, "Thunder Bluff", L["Zephras Isle"] },
-    { 1413, 63.74, 38.50, 1434, 26.08, 73.35, nil, BOAT, "Ratchet", "Booty Bay" },
-    { 1446, 67.57, 23.10, 2548, 79.38, 53.41, nil, BOAT, "Tanaris", L["Riverglades"] },
-    { 1453, 23.22, 55.05, 1439, 30.79, 40.82, "Alliance", BOAT, "Stormwind", "Auberdine" },
+    { 1412, 34.3, 26.1, 2521, 57.7, 81.0, "Horde", ZEP, "Thunder Bluff", L["Zephras Isle"] },
+    { 1446, 68.6, 23.0, 2548, 80.6, 54.6, "Horde", BOAT, "Tanaris", L["Riverglades"] },
+    -- alle
+    { 1413, 63.54, 38.61, 1434, 26.08, 73.35, nil, BOAT, "Ratchet", "Booty Bay" },
+    -- Allianz
+    { 1453, 21.8, 56.9, 1439, 30.5, 40.9, "Alliance", BOAT, "Stormwind", "Auberdine" },
+    { 1439, 33.3, 39.8, 1438, 54.8, 97.2, "Alliance", BOAT, "Auberdine", "Rut'theran" },
+    { 1437, 4.7, 63.8, 1445, 71.7, 56.7, "Alliance", BOAT, L["Menethil Harbor"], "Theramore" },
+    { 2521, 65.8, 83.8, 1416, 12.8, 51.2, "Alliance", BOAT, L["Zephras Isle"], 1416 },
+    { 1444, 43.1, 42.8, 1444, 31.0, 39.5, "Alliance", BOAT, 1444, "Feathermoon" },
+    { 1453, 66.6, 34.7, 1455, 73.0, 50.2, "Alliance", TRAM, "Stormwind", "Ironforge" },
     -- Rundfahrt, nur in dieser Richtung: Auberdine → Menethil → Southshore → Auberdine
-    { 1439, 32.30, 43.76, 1437, 4.83, 57.04, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"], true },
-    { 1437, 4.83, 57.04, 1424, 50.68, 69.35, "Alliance", BOAT, L["Menethil Harbor"], "Southshore", true },
-    { 1424, 50.68, 69.35, 1439, 32.30, 43.76, "Alliance", BOAT, "Southshore", "Auberdine", true },
-    { 1437, 5.21, 63.71, 1445, 71.28, 56.29, "Alliance", BOAT, L["Menethil Harbor"], "Theramore" },
-    { 1438, 55.60, 96.50, 1439, 32.40, 39.80, nil, BOAT, "Rut'theran", "Auberdine" },
-    { 2521, 65.69, 83.22, 1416, 12.30, 56.49, "Alliance", ZEP, L["Zephras Isle"], "Dalaran" },
+    { 1439, 32.3, 44.1, 1437, 4.5, 56.7, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"], true },
+    { 1437, 4.5, 56.7, 1424, 50.7, 70.4, "Alliance", BOAT, L["Menethil Harbor"], "Southshore", true },
+    { 1424, 50.7, 70.4, 1439, 32.3, 44.1, "Alliance", BOAT, "Southshore", "Auberdine", true },
 }
+local function placeName(v)
+    if type(v) ~= "number" then return v end
+    local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(v)
+    return info and info.name or tostring(v)
+end
 local linkCache
 
 -- Zwischenspeicher leeren (Karten-/Flugpunktdaten neu lesen)
@@ -1237,7 +1249,7 @@ local function links()
             if not (a and b) then
                 complete = false
             else
-                local name = l[8]:format(l[9], l[10])
+                local name = l[8]:format(placeName(l[9]), placeName(l[10]))
                 local am = { map = l[1], x = l[2], y = l[3] }
                 local bm = { map = l[4], x = l[5], y = l[6] }
                 table.insert(list, { a = a, b = b, name = name, am = am, bm = bm })

@@ -57,7 +57,7 @@ There is also a minimap button, an entry in the addon menu at the minimap, and t
 
 - Travel times are estimates: straight line × 1.3 on foot, straight line between flight points, a fixed time for zeppelins and boats. Lifts, towers and winding flight paths are not modelled, so a recommended flight can occasionally be slower than walking.
 - Roadbook learns your flight points when you open a flight map. Until then it does not recommend flights on that continent.
-- Boat and zeppelin docks outside the classic Horde routes were measured by hand. Please report a dock in the wrong place.
+- Boat, zeppelin and tram stops come from map data (Leatrix Maps, QuestieDB). Please report a stop in the wrong place.
 
 ## Sharing plans
 
@@ -119,7 +119,7 @@ Roadbook baut aus deinem Questlog eine Abgaberunde, sortiert sie nach Reisezeit 
 
 - Waypoints and arrow: [TomTom](https://www.curseforge.com/wow/addons/tomtom) by Cladhaire (used through its public API, not included).
 - Quest and NPC data: [QuestieDB](https://www.curseforge.com/wow/addons/questiedb), licensed under GPL-3.0 (read at runtime, not included and not copied).
-- Dock positions: the same list as in [Pastime](https://github.com/Koslowsky1337/Pastime), where zeppelin and ship masters stand in game.
+- Boat, zeppelin and tram stops: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; positions of the zeppelin and ship masters from QuestieDB.
 
 ## License
 
