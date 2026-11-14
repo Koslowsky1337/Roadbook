@@ -166,6 +166,73 @@ function ns.ShowImport()
 end
 
 ---------------------------------------------------------------------------
+-- Reiter „Optionen“
+---------------------------------------------------------------------------
+function ns.PickupText()
+    local v = ns.PickupMax()
+    return v > 0 and ns.FmtTime(v) or L["off"]
+end
+
+function ns.Build_options(panel, tab)
+    local head = ns.FontString(panel, "GameFontNormal")
+    head:SetPoint("TOPLEFT", 4, 0)
+    head:SetText(L["Options"])
+
+    local y = -26
+    local function check(text, tip, get, set)
+        local cb = ns.AutoWrap(CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate"), "option")
+        cb:SetSize(24, 24)
+        cb:SetPoint("TOPLEFT", 2, y)
+        local label = ns.FontString(panel, "GameFontHighlight")
+        label:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+        label:SetText(text)
+        cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false); ns.UpdateUI() end)
+        ns.SetTooltip(cb, text, tip)
+        cb.get = get
+        y = y - 28
+        return cb
+    end
+
+    local checks = {
+        check(L["Show the step tracker"], L["The small window below the minimap with your next step. Also: /rb tracker"],
+            function() return not (ns.DB.tracker and ns.DB.tracker.hidden) end,
+            function(v) ns.DB.tracker = ns.DB.tracker or {}; ns.DB.tracker.hidden = not v end),
+        check(L["Show the minimap button"], L["Also: /rb minimap. The addon menu at the minimap always has a Roadbook entry."],
+            function() return not ns.DB.minimap.hidden end,
+            function(v) ns.DB.minimap.hidden = not v; ns.UpdateMinimapButton() end),
+        check(L["Detailed log"], L["Writes more into the log and shows warnings in chat. Useful for bug reports. Also: /rb debug"],
+            function() return ns.DB.debug and true or false end,
+            function(v) ns.DB.debug = v end),
+    }
+
+    y = y - 12
+    local title = ns.FontString(panel, "GameFontNormal")
+    title:SetPoint("TOPLEFT", 4, y)
+    title:SetText(L["Undiscovered flight masters"])
+    y = y - 20
+    local info = ns.FontString(panel, "GameFontHighlightSmall")
+    info:SetPoint("TOPLEFT", 4, y)
+    info:SetPoint("RIGHT", -4, 0)
+    info:SetJustifyV("TOP")
+    info:SetText(L["If an undiscovered flight master is almost on your way, Roadbook adds it as a stop. Knowing it saves time later. Set how much detour that is worth to you."])
+    y = y - 34
+    local minus = ns.CreateButton(panel, "-", 28, function() ns.SetPickupMax(ns.PickupMax() - ns.PICKUP_STEP) end)
+    minus:SetPoint("TOPLEFT", 4, y)
+    local value = ns.FontString(panel, "GameFontHighlight", "CENTER")
+    value:SetPoint("LEFT", minus, "RIGHT", 6, 0)
+    value:SetWidth(210)
+    local plus = ns.CreateButton(panel, "+", 28, function() ns.SetPickupMax(ns.PickupMax() + ns.PICKUP_STEP) end)
+    plus:SetPoint("LEFT", value, "RIGHT", 6, 0)
+
+    tab.update = function()
+        for _, cb in ipairs(checks) do cb:SetChecked(cb.get()) end
+        value:SetText((L["Detour up to: %s"]):format(ns.PickupText()))
+        minus:SetEnabled(ns.PickupMax() > 0)
+        plus:SetEnabled(ns.PickupMax() < ns.PICKUP_LIMIT)
+    end
+end
+
+---------------------------------------------------------------------------
 -- Layout-Prüfer (/rb layout): meldet abgeschnittene, überstehende und
 -- überlappende Texte/Knöpfe als Warnung „layout“ im Protokoll. Dient auch
 -- den Tests (tests/layout.lua) für alle Sprachen.

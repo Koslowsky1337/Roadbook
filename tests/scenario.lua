@@ -824,6 +824,20 @@ fire("ZONE_CHANGED_NEW_AREA"); RunTimers()
 check(not (ns.travel and ns.travel.hop.kind == "neu"), "Flugmeister weit ab vom Weg wird nicht eingeplant")
 ns.DeactivatePlan(); RunTimers()
 
+-- Einstellung: wie viel Umweg ein unbekannter Flugmeister wert ist
+PLAYER = { map = 9000, x = 0.50, y = 0.45 }
+ns.C.plans["p840"] = { id = "p840", title = "Umweg", mode = "route", created = 12, steps = {
+    { type = "goto", map = 9002, x = 83.6, y = 60.4, title = "Auch hinterm Flugmeister" } } }
+ns.ActivatePlan("e:p840"); RunTimers()
+check(ns.travel and ns.travel.hop.kind == "neu", "Standard: Flugmeister am Weg wird mitgenommen")
+ns.HandleSlash("umweg 0"); RunTimers()
+check(ns.travel == nil and ns.PickupMax() == 0 and joined(LOG):find("Umweg für einen unbekannten Flugmeister: aus", 1, true), "/rb umweg 0 schaltet das Mitnehmen ab")
+ns.HandleSlash("detour 9999"); RunTimers()
+check(ns.PickupMax() == 600 and ns.travel and ns.travel.hop.kind == "neu", "Obergrenze 10 Minuten, Mitnehmen wieder an")
+ns.DB.pickupMax = nil
+check(ns.PickupMax() == 120, "Ohne Einstellung gelten 2 Minuten")
+ns.DeactivatePlan(); RunTimers()
+
 -- Zeppelin auf demselben Kontinent: schneller als der lange Fußweg
 MAPOFF[1420] = { 0, 0, 1000, 8 }; MAPOFF[1434] = { 0, 9000, 1000, 8 }
 ns.ClearRouteCache(); ns.taxiVersion = ns.taxiVersion + 1

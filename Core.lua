@@ -433,6 +433,7 @@ local HELP = {
     L["|cffffffff/rb log|r – show the log (|cffffffff/rb log clear|r)"],
     L["|cffffffff/rb import|r – import a plan from text · |cffffffff/rb export|r – show the selected plan as text"],
     L["|cffffffff/rb fm|r – waypoint to an undiscovered flight master nearby"],
+    L["|cffffffff/rb options|r – settings · |cffffffff/rb detour <seconds>|r – detour worth taking for an undiscovered flight master (0 = off)"],
     L["|cffffffff/rb debug|r – detailed log on/off · |cffffffff/rb layout|r – check the open windows for cut-off text"],
 }
 
@@ -455,6 +456,7 @@ local ALIAS = {
     sortieren = "sort", weg = "route", notiz = "note", neu = "note", new = "note",
     abgabe = "turnin", abgaben = "turnin", hier = "here", papierkorb = "trash",
     flugmeister = "fm", importieren = "import", exportieren = "export",
+    umweg = "detour", optionen = "options", einstellungen = "options", settings = "options",
 }
 
 local function planFor(rest)
@@ -501,6 +503,11 @@ function ns.HandleSlash(msg)
         if plan then ns.ShowCopy(L["Export: "] .. plan.title, ns.ExportPlan(plan)) else ns.Print(L["No plan loaded or selected."]) end
     elseif cmd == "fm" then
         ns.WaypointNewTaxi()
+    elseif cmd == "detour" then
+        if tonumber(rest) then ns.SetPickupMax(tonumber(rest)) end
+        ns.Print((L["Detour for an undiscovered flight master: %s"]):format(ns.PickupText()))
+    elseif cmd == "options" then
+        ns.ShowFrame("options")
     elseif cmd == "log" then
         local arg = rest:lower()
         if arg == "clear" or arg == "leeren" then

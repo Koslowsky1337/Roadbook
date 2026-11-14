@@ -28,6 +28,14 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Kommt die Meldung fälschlich für einen Flugmeister, den du **schon hast**? Dann ebenfalls melden.
 - [ ] Wird ein Flug empfohlen: am Flugmeister nennt der Chat das Ziel, nach der Landung zeigt der Pfeil zum eigentlichen Ziel. Stoppuhr-Gefühl: war der Flug wirklich schneller?
 
+**Neu in der Beta**
+- [ ] Reiter „Optionen“: die drei Häkchen wirken sofort (Tracker, Minimap-Knopf, Protokoll); Minus/Plus ändern den Umweg in 30-Sekunden-Schritten, „aus“ bei 0.
+- [ ] Unbekannter Flugmeister fast am Weg: er erscheint als eigene blaue Zeile im Plan („unbekannt – mitnehmen“), der Pfeil zeigt zuerst dorthin; nach dem Öffnen der Flugkarte geht es zum Ziel weiter.
+- [ ] Abflug bei einem unbekannten Flugmeister: Text „Erst zum unbekannten Flugmeister … (du lernst ihn dabei kennen)“, und der Flug von dort ist im Spiel wirklich möglich.
+- [ ] Zeppelin oder Schiff: etwa vier Sekunden nach dem Ablegen kommt „An Bord (…)“, der Anleger-Punkt verschwindet, der Pfeil zeigt zum Ziel. Nach dem Aussteigen rechnet Roadbook neu.
+- [ ] Reise-Abschnitt überspringen: „Weiter“ überspringt zuerst die blaue Zeile, beim zweiten Mal den Schritt; Rechtsklick auf die graue Zeile holt sie zurück.
+- [ ] Zeppelin auf demselben Kontinent (z. B. Undercity → Grom'gol für ein Ziel im Süden) wird statt des langen Fußwegs vorgeschlagen.
+
 **Zeppeline und Schiffe** (aus den Spieldaten bestätigt: Orgrimmar, Undercity, Grom'gol, Ratchet, Booty Bay)
 - [ ] Ziel auf dem anderen Kontinent: Pfeil zeigt zum Anleger, und der steht an der richtigen Stelle.
 - [ ] Aus Leatrix Maps übernommen, im Spiel noch nicht abgelaufen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande (laut Leatrix nur Horde) und alle Allianz-Linien samt Tiefenbahn und Feralas-Fähre. Wenn du dort vorbeikommst: stimmt der Anleger?
@@ -53,7 +61,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Alle Pläne werden bei jedem Zugriff neu aufbereitet (Befund 15). Kein messbares Problem in den Tests; falls es im Spiel bei vielen Plänen ruckelt, baue ich einen Zwischenspeicher ein.
 - [ ] Als Geist (TomTom „Leiche behalten“) übernimmt TomTom den Pfeil nicht; nach dem Wiederbeleben einmal auf den Tracker klicken.
 - [ ] Das gemerkte Reittempo gilt auch, wenn du gerade zu Fuß bist.
-- [ ] Kein Eintrag in den Spiel-Einstellungen (alles geht über `/rb` und das Fenster).
+- [ ] Kein Eintrag in den Spiel-Einstellungen von Blizzard; die Optionen stehen im eigenen Reiter des Roadbook-Fensters.
 
 ## 5. Veröffentlichung
 
@@ -69,7 +77,8 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Auf der Projektseite unter *Relations* **TomTom** und **QuestieDB** als *Required Dependency* eintragen bzw. prüfen (kommt aus `.pkgmeta`; falls nicht, von Hand eintragen).
 - [x] Automatisches Paket wie bei Pastime: in den GitHub-Einstellungen des Repos den CurseForge-Webhook eintragen (`https://www.curseforge.com/api/projects/<Projekt-ID>/package?token=<dein Token>`). Den Token nur dort eintragen, nie in eine Datei.
 - [x] Erste Alpha: Tag `v1.0.0-alpha1` (14.11.2026). Auf CurseForge unter *Files* prüfen: Datei ist da und als Alpha markiert, Spielversion „Forever“, im Zip kein `tests`, kein `media`, keine `.md`; in der TOC steht `1.0.0-alpha1`.
-- [ ] Vor jedem weiteren Tag: im `CHANGELOG.md` oben einen Abschnitt mit der neuen Version anlegen. Nächster Schritt nach den Spieltests: `v1.0.0-beta1`.
+- [x] Beta: Tag `v1.0.0-beta1` (14.11.2026). Wie bei der Alpha auf CurseForge unter *Files* prüfen; im Zip darf `CURSEFORGE.md` jetzt nicht mehr liegen.
+- [ ] Vor jedem weiteren Tag: im `CHANGELOG.md` oben einen Abschnitt mit der neuen Version anlegen.
 - [ ] Erst nach dem Beta-Test: Tag `v1.0.0` (ohne „beta“ = Release, nur das erscheint in der CurseForge-App).
 
 ### CurseForge-Texte

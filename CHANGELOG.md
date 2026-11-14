@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-beta1
 
+Please report anything odd: https://github.com/Koslowsky1337/Roadbook/issues
+
+- New tab **Options**: step tracker, minimap button, detailed log, and how much detour an undiscovered flight master is worth (0 to 10 minutes, default 2; also `/rb detour <seconds>`).
 - Undiscovered flight masters are now part of the route: if one is almost on your way (up to two minutes of detour) it becomes a stop of its own, and a flight can start at a flight master you learn on the way. Flights *to* an undiscovered flight point are still never recommended.
 - On a zeppelin or boat the dock waypoint now disappears by itself: when you are carried along without walking, the arrow switches to your destination.
 - Boat, zeppelin and tram stops now come from Leatrix Maps and QuestieDB. New: Deeprun Tram Stormwind ↔ Ironforge, the Feralas ferry to Feathermoon, Zephras Isle ↔ Alterac Mountains. Tanaris ↔ Riverglades is Horde only. Several stops moved slightly.

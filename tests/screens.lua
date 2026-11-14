@@ -60,6 +60,15 @@ for _, sec in ipairs(ns.GetNoteSections()) do
     end
 end
 
+-- Reiter Optionen: Standard, Umweg aus, Umweg am oberen Ende
+ns.ShowFrame("options")
+scan("Optionen")
+ns.SetPickupMax(0); ns.UpdateUI()
+scan("Optionen, Umweg aus")
+ns.SetPickupMax(600); ns.UpdateUI()
+scan("Optionen, Umweg 10 Min.")
+ns.SetPickupMax(120)
+
 -- Reiter Makros: jedes Makro (neu, geändert, aktuell), im Kampf
 ns.ShowFrame("macros")
 scan("Makros")

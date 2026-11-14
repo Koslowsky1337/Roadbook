@@ -7,7 +7,8 @@ Roadbook builds a turn-in round from your quest log, sorts it by travel time and
 - **Turn-in round in one click:** takes every quest in your log that is ready to turn in, looks up the turn-in NPC in QuestieDB and builds a route from where you stand.
 - **Ordered by travel time, not by distance:** walking, flights between the flight points you know, zeppelins and boats between continents, and one zone at a time where possible.
 - **Flight master first:** when a flight saves time, the arrow first points to the flight master and the chat tells you where to fly. After landing it points to your destination.
-- **Undiscovered flight master nearby?** Roadbook tells you once, so you can pick it up on the way. `/rb fm` sets a waypoint.
+- **Undiscovered flight masters:** one that is almost on your way becomes a stop of its own, and a flight can start at a flight master you learn on the way. How much detour that is worth is a setting. Nearby ones are announced once; `/rb fm` sets a waypoint.
+- **Zeppelins, boats and the tram** are part of the route, also within one continent. Once you are on board, the dock waypoint disappears by itself.
 - **Step tracker** below the minimap: next step, distance, travel hint, and quests ready to turn in that are missing from your plan.
 - **Your own plans:** save your TomTom waypoints as a plan, remember your current position with `/rb here`, reorder, rename and sort steps. Everything you delete stays in the trash for 10 minutes.
 - **Two modes:** *Route* (one step after the other) and *All points* (all open steps on the map, arrow to the one you reach fastest).
@@ -38,6 +39,7 @@ Game version: WoW Forever.
 - `/rb tomtom <name>` – save your current TomTom waypoints as a plan
 - `/rb import` · `/rb export` – share plans as text
 - `/rb fm` – waypoint to an undiscovered flight master nearby
+- `/rb options` – settings · `/rb detour <seconds>` – detour worth taking for an undiscovered flight master
 - `/rb note <title>` · `/rb trash` · `/rb tracker` · `/rb minimap`
 - `/rb log` · `/rb debug` · `/rb layout` – for bug reports
 

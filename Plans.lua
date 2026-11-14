@@ -1416,17 +1416,29 @@ end
 
 -- Unbekannter Flugmeister, der kaum Umweg kostet: mitnehmen. Ihn zu kennen spart später
 -- mehr, als der Umweg jetzt kostet.
-local PICKUP_MAX = 120      -- Sekunden Umweg, die das wert ist
+ns.PICKUP_DEFAULT, ns.PICKUP_STEP, ns.PICKUP_LIMIT = 120, 30, 600   -- Sekunden Umweg (Reiter Optionen, /rb detour)
+
+function ns.PickupMax()
+    local v = tonumber(ns.DB and ns.DB.pickupMax)
+    return v and math.max(0, math.min(ns.PICKUP_LIMIT, v)) or ns.PICKUP_DEFAULT
+end
+
+function ns.SetPickupMax(seconds)
+    ns.DB.pickupMax = math.max(0, math.min(ns.PICKUP_LIMIT, math.floor((tonumber(seconds) or ns.PICKUP_DEFAULT) + 0.5)))
+    ns.Log("I", "route", "Detour for undiscovered flight masters: %d s", ns.DB.pickupMax)
+    ns.Refresh()
+end
 
 local function pickupNode(from, to)
-    if not ns.TaxiListComplete(from.map) then return nil end
+    local limit = ns.PickupMax()
+    if limit <= 0 or not ns.TaxiListComplete(from.map) then return nil end
     local _, unknown = taxiNodesFor(from.map)
     local direct = walkTime(from, to)
     local node, least
     for _, n in ipairs(unknown) do
         if n.c == from.c and n.c == to.c then
             local extra = walkTime(from, n) + walkTime(n, to) - direct
-            if extra <= PICKUP_MAX and (not least or extra < least) then node, least = n, extra end
+            if extra <= limit and (not least or extra < least) then node, least = n, extra end
         end
     end
     return node, least
