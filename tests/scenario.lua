@@ -763,6 +763,10 @@ local pasted = ns.ImportText("RB1 Eingefügt\nstep||type=goto||map=1413||x=5||y=
 check(pasted and pasted.steps[1].title == "Doppelstrich" and pasted.steps[1].x == 5, "Alte Fassung mit „|“ wird weiter gelesen, auch als „||“ aus dem Textfeld")
 local back = ns.ImportText(text)
 check(back and back.source == "eigen" and #back.steps == 2 and ns.PlanMode(back) == "alle" and back.steps[2].title == "Fern", "Export und Import ergeben denselben Plan")
+local manKey = ns.NormalizeStep({ type = "manual", title = "Von Hand" }).key
+ns.C.done[manKey] = time()
+local fresh = ns.ImportText("RB1 Frisch\nstep;type=manual;title=Von Hand")
+check(fresh and not ns.C.done[manKey] and ns.StepState(fresh.steps[1], fresh.id) ~= "done", "Importierter Plan fängt von vorn an (altes Häkchen weg)")
 local imp = ns.ImportText("RB1 Geteilt | mit Strich\nmode=route\nnote=Zeile 1\\nZeile 2\n"
     .. "step|type=turnin|quest=894|map=1413|x=52.4|y=11.6|title=Konsole|text=A\\pB\nKauderwelsch")
 check(imp and imp.title == "Geteilt | mit Strich" and #imp.steps == 1 and imp.steps[1].text == "A|B"

@@ -74,7 +74,8 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [x] Beta: Tag `v1.0.0-beta1` (14.11.2026). Wie bei der Alpha auf CurseForge unter *Files* prüfen; im Zip darf `CURSEFORGE.md` jetzt nicht mehr liegen.
 - [x] Beta 2: Tag `v1.0.0-beta2` (15.11.2026) – behebt den verstümmelten Plan-Export.
 - [ ] Vor jedem weiteren Tag: im `CHANGELOG.md` oben einen Abschnitt mit der neuen Version anlegen.
-- [ ] Erst nach dem Beta-Test: Tag `v1.0.0` (ohne „beta“ = Release, nur das erscheint in der CurseForge-App).
+- [x] Release: Tag `v1.0.0` (15.11.2026). Im Spiel bis dahin nicht geprüft: Mitfahr-Erkennung auf Zeppelin/Schiff, englischer Client, Allianz-Linien.
+- [ ] Auf GitHub unter *Releases* den Release zu `v1.0.0` anlegen (Text aus dem `CHANGELOG.md`).
 
 ### CurseForge-Texte
 

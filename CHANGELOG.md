@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0
+
+First release. Roadbook builds a turn-in round from your quest log, orders it by travel time (walking, known flight points, zeppelins, boats, tram) and drives the TomTom arrow from stop to stop. It also has your own plans, import and export as text, a notebook and a macro library. Requires TomTom and QuestieDB.
+
+Since 1.0.0-beta2:
+
+- An imported plan now starts from the beginning: steps you had ticked off by hand at the same places are open again. Quests you have really turned in stay done.
+
 ## 1.0.0-beta2
 
 - Fixed: exported plans were garbled in the copy window, so sharing did not work. The game reads `|t`, `|n` and similar as control codes in text boxes, and the export used `|` as separator. The export now uses `;`. Text exported with 1.0.0-beta1 can still be imported.

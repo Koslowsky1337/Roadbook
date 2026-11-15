@@ -115,7 +115,11 @@ function ns.ImportText(text)
         return nil, err
     end
     local id = ns.NextId("p")
-    ns.ForgetArrivals(plan.steps)
+    -- Ein importierter Plan fängt von vorn an: alte Häkchen an denselben Zielen gelten nicht mehr
+    for _, raw in ipairs(plan.steps) do
+        local st = ns.NormalizeStep(raw)
+        if st then ns.C.done[st.key] = nil end
+    end
     ns.C.plans[id] = { id = id, title = plan.title, mode = plan.mode, note = plan.note, steps = plan.steps,
                        created = time(), origin = ns.CopySteps(plan.steps) }
     ns.C.selectedPlan = "e:" .. id
