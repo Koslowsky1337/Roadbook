@@ -71,7 +71,7 @@ local function hasDB() return _G.NpcDB and NpcDB.Get and NpcDB.GetAllIds end
 local function indexStep(all)
     if not idx then
         local ok, ids = pcall(NpcDB.GetAllIds)
-        idx = { src = (ok and type(ids) == "table") and ids or {}, pos = 0, ids = {}, names = {}, flags = {} }
+        idx = { src = (ok and type(ids) == "table") and ids or {}, pos = 0, ids = {}, names = {}, subs = {}, flags = {} }
     end
     local last = all and #idx.src or math.min(#idx.src, idx.pos + CHUNK)
     for i = idx.pos + 1, last do
@@ -79,7 +79,9 @@ local function indexStep(all)
         local name = NpcDB.Get(id, "name")
         if type(name) == "string" and name ~= "" then
             local n = #idx.ids + 1
+            local sub = NpcDB.Get(id, "subName")
             idx.ids[n], idx.names[n], idx.flags[n] = id, name:lower(), tonumber(NpcDB.Get(id, "npcFlags")) or 0
+            idx.subs[n] = type(sub) == "string" and sub:lower() or ""
         end
     end
     idx.pos = last
@@ -128,12 +130,25 @@ local function inCategory(cat, i)
     return false
 end
 
--- Nächster Fundort eines NPCs nach Luftlinie (anderer Kontinent: weit hinten)
-local function nearestSpawn(id, here)
+local zoneNames = {}
+local function zoneName(map)
+    local n = zoneNames[map]
+    if not n then
+        local info = C_Map.GetMapInfo and C_Map.GetMapInfo(map)
+        n = (info and info.name or "?"):lower()
+        zoneNames[map] = n
+    end
+    return n
+end
+
+-- Nächster Fundort eines NPCs nach Luftlinie (anderer Kontinent: weit hinten);
+-- mit „place“ zählen nur Fundorte in Gebieten, deren Name diesen Text enthält
+local function nearestSpawn(id, here, place)
     local spawns = NpcDB.Get(id, "spawns")
     local best, bestD
     for area, list in pairs(type(spawns) == "table" and spawns or {}) do
         local map = ns.AreaToUiMap(area)
+        if map and place and not zoneName(map):find(place, 1, true) then map = nil end
         for _, xy in ipairs(type(list) == "table" and list or {}) do
             local x, y = xy[1], xy[2]
             if map and type(x) == "number" and type(y) == "number" and x >= 0 and x <= 100 and y >= 0 and y <= 100 then
@@ -156,8 +171,10 @@ end
 
 local MAX_TEXT_HITS = 300   -- Namenssuche: so viele NPCs werden höchstens auf Fundorte geprüft
 local SHORTLIST = 12        -- so viele nächste Kandidaten bekommen die genaue Reisezeit
+local PLACE_LIST = 20       -- mit Gebiet: so viele Treffer werden gelistet
 
--- query = { cat = <Kategorie> } oder { text = "Namensteil" }.
+-- query = { cat = <Kategorie> } oder { text = "Teil von Name oder Titel" }, dazu
+-- wahlweise place = "Teil des Gebietsnamens" (dann nur Treffer dort, längere Liste).
 -- Liefert die nächsten NPCs nach Reisezeit, oder nil und eine Meldung.
 function ns.FindNpcs(query, limit)
     if ns.staging then return ns.staging.npcs end   -- Fototour: Beispieltreffer
@@ -165,7 +182,9 @@ function ns.FindNpcs(query, limit)
     local here = ns.PlayerPos()
     if not here then return nil, L["Your position is not available here (e.g. in instances)."] end
     local text = query.text and ns.Trim(query.text):lower() or nil
-    if text and #text < 2 then return nil, L["Type at least two letters."] end
+    if not query.cat and #(text or "") < 2 then return nil, L["Type at least two letters."] end
+    local place = query.place and ns.Trim(query.place):lower() or ""
+    if place == "" then place = nil end
     if not (idx and idx.done) then indexStep(true) end
     local t0 = debugprofilestop and debugprofilestop() or 0
     local faction = (UnitFactionGroup("player") == "Alliance") and "A" or "H"
@@ -175,25 +194,28 @@ function ns.FindNpcs(query, limit)
         local id = idx.ids[i]
         local ok
         if text then
+            -- Treffer im Namen: genau dieser NPC ist gemeint, egal welche Seite.
+            -- Treffer nur im Titel („Reagenzien“) ist eine Dienst-Suche wie eine Kategorie.
             ok = idx.names[i]:find(text, 1, true) ~= nil
+            if not ok and idx.subs[i]:find(text, 1, true) then ok = "service" end
         else
-            ok = inCategory(query.cat, i)
-            if ok then
-                local friendly = NpcDB.Get(id, "friendlyToFaction")
-                ok = not (type(friendly) == "string" and friendly ~= "" and not friendly:find(faction, 1, true))
-            end
+            ok = inCategory(query.cat, i) and "service"
+        end
+        if ok == "service" and not query.anyFaction then
+            local friendly = NpcDB.Get(id, "friendlyToFaction")
+            ok = not (type(friendly) == "string" and friendly ~= "" and not friendly:find(faction, 1, true))
         end
         if ok then
             hits = hits + 1
             if hits > MAX_TEXT_HITS and text then break end
-            local spot, d = nearestSpawn(id, here)
+            local spot, d = nearestSpawn(id, here, place)
             if spot then cands[#cands + 1] = { id = id, spot = spot, d = d } end
         end
     end
     table.sort(cands, function(a, b) return a.d < b.d end)
 
     local out = {}
-    for i = 1, math.min(SHORTLIST, #cands) do
+    for i = 1, math.min(place and PLACE_LIST or SHORTLIST, #cands) do
         local c = cands[i]
         local info = C_Map.GetMapInfo and C_Map.GetMapInfo(c.spot.map)
         local sub = NpcDB.Get(c.id, "subName")
@@ -204,9 +226,9 @@ function ns.FindNpcs(query, limit)
         }
     end
     table.sort(out, function(a, b) return a.cost < b.cost end)
-    for i = #out, (limit or 8) + 1, -1 do out[i] = nil end
-    ns.Log("I", "search", "NPC search %s: %d hits, %d with a position, %.0f ms",
-        text and ("\"" .. text .. "\"") or query.cat.key, hits, #cands, (debugprofilestop and debugprofilestop() or 0) - t0)
+    for i = #out, (limit or (place and PLACE_LIST or 8)) + 1, -1 do out[i] = nil end
+    ns.Log("I", "search", "NPC search %s%s: %d hits, %d with a position, %.0f ms",
+        text and ("\"" .. text .. "\"") or query.cat.key, place and (" in \"" .. place .. "\"") or "", hits, #cands, (debugprofilestop and debugprofilestop() or 0) - t0)
     if #out == 0 then return nil, L["Nothing found."] end
     return out
 end
@@ -234,12 +256,18 @@ function ns.AddNpcStep(r)
     ns.AddSpotStep({ type = "goto", map = r.map, x = r.x, y = r.y, zone = r.zone, title = r.name, note = r.sub })
 end
 
--- /rb find <Kategorie oder Namensteil>: direkt zum nächsten Treffer
+-- /rb find <Kategorie oder Namensteil> [in <Gebiet>]: direkt zum nächsten Treffer
 function ns.FindCommand(rest)
     rest = ns.Trim(rest or "")
     if rest == "" then ns.ShowFrame("search") return end
-    local cat = findCategory(rest)
-    local res, err = ns.FindNpcs(cat and { cat = cat } or { text = rest }, 1)
+    local function find(what, place)
+        local cat = findCategory(what)
+        return ns.FindNpcs(cat and { cat = cat, place = place } or { text = what, place = place }, 1)
+    end
+    local what, place = rest:match("^(.-)%s+in%s+(.+)$")
+    local res, err
+    if what then res = find(what, place) end
+    if not res then res, err = find(rest) end   -- auch für Namen, in denen „in“ vorkommt
     if res then ns.GoToNpc(res[1]) else ns.Print(err) end
 end
 
@@ -259,9 +287,11 @@ function ns.Build_search(panel, tab)
     listInset:SetWidth(LEFT_W)
 
     local selCat, results, selected, message
-    local edit
+    local edit, placeEdit, anyFaction
 
     local function run(query)
+        query.place = placeEdit:GetText()
+        query.anyFaction = anyFaction:GetChecked() and true or false
         results, message = ns.FindNpcs(query)
         selected = results and results[1] or nil
         ns.UpdateUI()
@@ -295,20 +325,42 @@ function ns.Build_search(panel, tab)
     edit = ns.AutoWrap(CreateFrame("EditBox", nil, right, "InputBoxTemplate"), "search")
     edit:SetAutoFocus(false)
     edit:SetSize(220, 20)
-    edit:SetPoint("LEFT", label, "RIGHT", 12, 0)
+    edit:SetPoint("LEFT", label, "LEFT", 66, 0)
+    local placeLabel = ns.FontString(right, "GameFontNormal")
+    placeLabel:SetPoint("TOPLEFT", 2, -30)
+    placeLabel:SetText(L["Zone:"])
+    placeEdit = ns.AutoWrap(CreateFrame("EditBox", nil, right, "InputBoxTemplate"), "search")
+    placeEdit:SetAutoFocus(false)
+    placeEdit:SetSize(220, 20)
+    placeEdit:SetPoint("LEFT", placeLabel, "LEFT", 66, 0)
+    -- Name leer und Kategorie gewählt: die Kategorie noch einmal (z. B. mit neuem Gebiet)
     local function runText()
-        selCat = nil
         edit:ClearFocus()
-        run({ text = edit:GetText() or "" })
+        placeEdit:ClearFocus()
+        local text = ns.Trim(edit:GetText() or "")
+        if text == "" and selCat then run({ cat = selCat }) return end
+        selCat = nil
+        run({ text = text })
     end
+    placeEdit:SetScript("OnEnterPressed", runText)
+    anyFaction = ns.AutoWrap(CreateFrame("CheckButton", nil, right, "UICheckButtonTemplate"), "search-faction")
+    anyFaction:SetSize(24, 24)
+    anyFaction:SetPoint("LEFT", placeEdit, "RIGHT", 8, 0)
+    local anyText = ns.FontString(right, "GameFontHighlightSmall")
+    anyText:SetPoint("LEFT", anyFaction, "RIGHT", 2, 0)
+    anyText:SetText(L["Other faction too"])
+    ns.SetTooltip(anyFaction, L["Other faction too"],
+        L["Categories and title matches normally list only NPCs of your own faction. Ticked, the other faction's NPCs are listed as well, e.g. to share their position."])
+    anyFaction:SetScript("OnClick", function() if results then runText() end end)
+    placeEdit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     edit:SetScript("OnEnterPressed", runText)
     edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     local bSearch = ns.CreateButton(right, L["Search"], 90, runText)
     bSearch:SetPoint("LEFT", edit, "RIGHT", 8, 0)
-    ns.SetTooltip(bSearch, L["Search"], L["Finds NPCs by a part of their name and lists the nearest ones by travel time."])
+    ns.SetTooltip(bSearch, L["Search"], L["Finds NPCs by a part of their name or title and lists the nearest ones by travel time. With a zone, only NPCs there are listed."])
 
     local resInset = ns.CreateInset(right)
-    resInset:SetPoint("TOPLEFT", 0, -28)
+    resInset:SetPoint("TOPLEFT", 0, -54)
     resInset:SetPoint("BOTTOMRIGHT", 0, 48)
     local resList = ns.CreateScrollList(resInset, 20, function(parent)
         local row = ns.CreateRow(parent)
@@ -344,12 +396,20 @@ function ns.Build_search(panel, tab)
     bAdd:SetPoint("LEFT", bGo, "RIGHT", 4, 0)
     ns.SetTooltip(bAdd, L["Add to plan"], L["Adds this NPC as a step to the loaded plan, otherwise to the selected plan of your own or to a new one."])
 
+    local bWay = ns.CreateButton(right, L["Copy /way"], 120, function()
+        local r = selected
+        if r then ns.ShowCopy(L["Copy /way"], ("/way %s %.1f %.1f %s"):format(r.zone, r.x, r.y, r.name)) end
+    end)
+    bWay:SetPoint("LEFT", bAdd, "RIGHT", 4, 0)
+    ns.SetTooltip(bWay, L["Copy /way"], L["Shows the TomTom command for this NPC to copy, e.g. to share it in chat."])
+
     -- Fototour: eine Kategorie mit Treffern zeigen
     tab.demo = function()
         for _, c in ipairs(ns.NpcCategories()) do
             if c.key == "vendor" then selCat = c end
         end
         edit:SetText("")
+        placeEdit:SetText("")
         run({ cat = selCat })
     end
 
@@ -381,12 +441,13 @@ function ns.Build_search(panel, tab)
             row.selected:SetShown(r == selected)
         end)
         emptyText:SetShown(not results)
-        emptyText:SetText(message or L["Pick a category on the left or search for a name."])
+        emptyText:SetText(message or L["Pick a category on the left or search for a name or title. A zone lists only the NPCs there."])
 
         local has = selected ~= nil
         info:SetShown(has)
         bGo:SetEnabled(has)
         bAdd:SetEnabled(has)
+        bWay:SetEnabled(has)
         if has then
             info:SetText(("%s%s %.1f %.1f"):format(selected.sub and (selected.sub .. " · ") or "", selected.zone, selected.x, selected.y))
         end

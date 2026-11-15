@@ -17,7 +17,7 @@ Roadbook builds a turn-in round from your quest log, sorts it by travel time and
 - **Your own plans:** save your TomTom waypoints as a plan, remember your current position with `/rb here`, reorder, rename and sort steps. Everything you delete stays in the trash for 10 minutes.
 - **Two modes:** *Route* (one step after the other) and *All points* (all open steps on the map, arrow to the one you reach fastest).
 - **Share plans as text:** *Export* shows a plan as plain text, *Import plan* reads it. The import also understands `/way` lines.
-- **NPC search:** nearest vendor, repair, innkeeper, bank, auction house, flight master, stable master, class or profession trainer by travel time, or any NPC by name. Show the way or add it to a plan.
+- **NPC search:** nearest vendor, repair, innkeeper, bank, auction house, flight master, stable master, class or profession trainer by travel time, or any NPC by name or title, nearby or in a zone you pick. Show the way or add it to a plan.
 - **Notebook:** notes per character or for all your characters, and one note per plan.
 - **Macro library:** suggested macros can be created, updated, undone and picked up onto the cursor. Suggestions come from a content pack (see below).
 - **English and German** client support.
@@ -49,7 +49,7 @@ Install Roadbook with the CurseForge app ([Roadbook on CurseForge](https://www.c
 - `/rb here [name]` – remember your current position as a step
 - `/rb tomtom <name>` – save your current TomTom waypoints as a plan
 - `/rb import` · `/rb export` – share plans as text
-- `/rb find <name or category>` – way to the nearest NPC (vendor, innkeeper, trainer …)
+- `/rb find <name or category> [in <zone>]` – way to the nearest NPC (vendor, innkeeper, trainer …), optionally in one zone
 - `/rb fm` – waypoint to an undiscovered flight master nearby
 - `/rb options` – settings · `/rb detour <seconds>` – detour worth taking for an undiscovered flight master
 - `/rb note <title>` · `/rb trash` · `/rb tracker` · `/rb minimap`

@@ -434,7 +434,7 @@ local HELP = {
     L["|cffffffff/rb minimap|r – show or hide the minimap button"],
     L["|cffffffff/rb log|r – show the log (|cffffffff/rb log clear|r)"],
     L["|cffffffff/rb import|r – import a plan from text · |cffffffff/rb export|r – show the selected plan as text"],
-    L["|cffffffff/rb find <name or category>|r – way to the nearest NPC (vendor, innkeeper, trainer …); without text: open the NPC search"],
+    L["|cffffffff/rb find <name or category> [in <zone>]|r – way to the nearest NPC (vendor, innkeeper, trainer …); without text: open the NPC search"],
     L["|cffffffff/rb fm|r – waypoint to an undiscovered flight master nearby"],
     L["|cffffffff/rb options|r – settings · |cffffffff/rb detour <seconds>|r – detour worth taking for an undiscovered flight master (0 = off)"],
     L["|cffffffff/rb debug|r – detailed log on/off · |cffffffff/rb layout|r – check the open windows for cut-off text"],

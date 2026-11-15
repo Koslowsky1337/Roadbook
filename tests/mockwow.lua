@@ -243,10 +243,11 @@ NpcDB = DB({
     -- für die NPC-Suche (Spieler steht im Brachland bei 57.6, 21.3)
     [3001] = { name = "Naher Händler", npcFlags = 4 + 1, friendlyToFaction = "H", spawns = { [17] = { { 58, 23 } } } },
     [3002] = { name = "Ferner Händler", npcFlags = 4 + 16384, friendlyToFaction = "AH", spawns = { [17] = { { 20, 80 }, { 30, 70 } } } },
-    [3003] = { name = "Allianz-Händler", npcFlags = 4, friendlyToFaction = "A", spawns = { [17] = { { 57.7, 21.4 } } } },
+    [3003] = { name = "Allianz-Händler", subName = "Reagenzien", npcFlags = 4, friendlyToFaction = "A", spawns = { [17] = { { 57.7, 21.4 } } } },
     [3004] = { name = "Sorek", subName = "Kriegerlehrer", raw_subName = "Warrior Trainer", npcFlags = 16 + 3, friendlyToFaction = "H", spawns = { [17] = { { 50, 30 } } } },
     [3005] = { name = "Zauberin", subName = "Magierlehrerin", raw_subName = "Mage Trainer", npcFlags = 16, friendlyToFaction = "H", spawns = { [17] = { { 57, 22 } } } },
     [3006] = { name = "Schneiderin", subName = "Schneidergesellin", raw_subName = "Journeyman Tailor", npcFlags = 16, spawns = { [17] = { { 55, 25 } } } },
+    [3008] = { name = "Mulgore-Händler", subName = "Reagenzien", npcFlags = 4, friendlyToFaction = "H", spawns = { [406] = { { 40, 40 } } } },
     [3007] = { name = "Händler ohne Ort", npcFlags = 4, spawns = { [2437] = { { -1, -1 } } } },
 })
 ObjectDB = DB({ [4141] = { name = "Steuerkonsole", spawns = { [17] = { { 52.4, 11.65 } } } } })

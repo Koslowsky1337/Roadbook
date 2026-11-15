@@ -935,7 +935,7 @@ check(#ERRORS_FORWARDED == errBase8, "Keine neuen Lua-Fehler in 0.8: " .. joined
 PLAYER.map, PLAYER.x, PLAYER.y = 1413, 0.576, 0.213
 local function cat(key) for _, c in ipairs(ns.NpcCategories()) do if c.key == key then return c end end end
 local vend = ns.FindNpcs({ cat = cat("vendor") })
-check(vend and #vend == 2 and vend[1].name == "Naher Händler" and vend[2].name == "Ferner Händler",
+check(vend and #vend == 3 and vend[1].name == "Naher Händler" and vend[2].name == "Ferner Händler",
       "Händler: nächster zuerst, Allianz-Händler und Händler ohne Ort fehlen")
 check(vend and vend[2].x == 30 and vend[2].y == 70, "Bei mehreren Fundorten zählt der nächste")
 check(vend and vend[1].zone and vend[1].cost and vend[1].cost < vend[2].cost, "Treffer tragen Gebiet und Reisezeit")
@@ -949,6 +949,18 @@ check(byName and byName[1].name == "Kadrak", "Namenssuche mit Namensteil")
 local none, why = ns.FindNpcs({ text = "x" })
 check(none == nil and why == ns.L["Type at least two letters."], "Zu kurzer Suchtext wird abgelehnt")
 check(ns.FindNpcs({ text = "gibtsnicht" }) == nil, "Kein Treffer: nil")
+MAPINFO[1442] = MAPINFO[1442] or { name = "Mulgore" }
+local inZone = ns.FindNpcs({ cat = cat("vendor"), place = " mulg " })
+check(inZone and #inZone == 1 and inZone[1].name == "Mulgore-Händler", "Mit Gebiet: nur die Händler dort, auch wenn weit weg")
+check(ns.FindNpcs({ cat = cat("vendor"), place = "nirgendwo" }) == nil, "Unbekanntes Gebiet: kein Treffer")
+local byTitle = ns.FindNpcs({ text = "reagenz" })
+check(byTitle and #byTitle == 1 and byTitle[1].name == "Mulgore-Händler", "Textsuche trifft auch den Titel")
+local both = ns.FindNpcs({ text = "reagenz", anyFaction = true })
+check(both and #both == 2, "Auch andere Fraktion: Titelsuche listet beide Seiten")
+local foe = ns.FindNpcs({ text = "allianz-h" })
+check(foe and #foe == 1, "Namenssuche findet auch NPCs der anderen Seite; die Titelsuche nicht")
+ns.HandleSlash("suche händler in mulgore")
+check(joined(TT_List()):find("Mulgore-Händler|Roadbook search", 1, true), "/rb suche <Kategorie> in <Gebiet>")
 ns.GoToNpc(vend[1])
 check(joined(TT_List()):find("Naher Händler|Roadbook search", 1, true), "Weg zeigen setzt einen TomTom-Punkt: " .. joined(TT_List()))
 ns.GoToNpc(vend[2])

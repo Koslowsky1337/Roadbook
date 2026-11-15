@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- NPC search: a zone field lists only the NPCs in that zone, also far away ones (up to 20). `/rb find vendor in Orgrimmar` does the same.
+- NPC search: the text search also matches the title below the name, e.g. "portal" or "reagent". Title matches only list NPCs of your own faction, unless you tick "Other faction too".
+- NPC search: "Copy /way" shows the TomTom command for the selected NPC to copy and share.
+
 ## 1.1.0
 
 - New tab **NPC search**: pick a category (vendor, repair, innkeeper, banker, auctioneer, flight master, stable master, your class trainer, weapon master, riding and profession trainers) or type part of a name. Roadbook lists the nearest NPCs of your faction by travel time. *Show the way* sets a TomTom waypoint, *Add to plan* adds the NPC as a step.
