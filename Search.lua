@@ -152,6 +152,11 @@ end
 
 -- Rang und Höchstwert des Spielers in einem Beruf (nil: nicht gelernt)
 function ns.PlayerSkill(skill)
+    if ns.staging then   -- Fototour: Beispiel-Berufe
+        local demo = ns.staging.skills and ns.staging.skills[skill]
+        if demo then return demo[1], demo[2] end
+        return nil
+    end
     if GetProfessions and GetProfessionInfo then
         local p = { GetProfessions() }
         for k = 1, 6 do

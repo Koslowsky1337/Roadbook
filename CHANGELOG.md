@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `/rb shots`: names above characters are hidden during the tour and the search shows sample professions, so the pictures contain nothing of your own.
+
 ## 1.2.1
 
 - Update notice: Roadbook exchanges its version number invisibly with other Roadbook users in your guild and group and tells you in chat when a newer version exists. Only the version number is sent; the notice can be switched off in the options.

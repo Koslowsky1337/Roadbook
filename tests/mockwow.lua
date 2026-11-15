@@ -264,6 +264,9 @@ LibQuestieDB = { Support = { Get = function(n)
                                                areaIdToUiMapIdOverride = "return { }" } } end
 end } }
 
+CVARS = { UnitNameOwn = "1", UnitNameNPC = "1" }
+GetCVar = function(n) return CVARS[n] end
+SetCVar = function(n, v) CVARS[n] = v end
 ADDON_SENT = {}
 C_ChatInfo = { RegisterAddonMessagePrefix = function() return true end,
                SendAddonMessage = function(prefix, text, channel) ADDON_SENT[#ADDON_SENT + 1] = prefix .. "|" .. text .. "|" .. channel end }

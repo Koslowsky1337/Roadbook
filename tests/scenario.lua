@@ -850,7 +850,7 @@ ns.DeactivatePlan(); RunTimers()
 -- /rb fotos: jedes Fenster einmal mit Beispieldaten, je ein Screenshot mit Zuschnitt-Daten;
 -- eigene Pläne, Notizen und Makros sind nicht zu sehen und bleiben unverändert
 do
-    local shots, seenPlans, seenMacros, seenNotes, seenTravel = 0, nil, nil, nil, nil
+    local shots, seenPlans, seenMacros, seenNotes, seenTravel, seenNames, seenSkill = 0, nil, nil, nil, nil, nil, nil
     Screenshot = function()
         shots = shots + 1
         if shots == 1 then
@@ -863,8 +863,11 @@ do
             t = {}
             for _, sec in ipairs(ns.GetNoteSections()) do for _, n in ipairs(sec.items) do t[#t + 1] = n.title end end
             seenNotes = joined(t)
+            seenNames = CVARS.UnitNameOwn .. CVARS.UnitNameNPC
+            seenSkill = joined({ ns.PlayerSkill(356) })
         end
     end
+    SKILLS = { { name = "Angeln", rank = 7, max = 75, line = 356 } }
     local plansBefore, activeBefore, selBefore, travelBefore = #ns.GetPlans(), ns.C.activePlan, ns.C.selectedPlan, ns.travel
     local wpBefore = joined(TT_List())
     LOG = {}
@@ -882,6 +885,9 @@ do
     check(ns.staging == nil and #ns.GetPlans() == plansBefore and ns.C.activePlan == activeBefore and ns.C.selectedPlan == selBefore
           and ns.travel == travelBefore and joined(TT_List()) == wpBefore, "Nach der Fototour ist alles wie vorher")
     check(joined(LOG):find("8 Screenshots liegen im Ordner", 1, true), "Abschlussmeldung")
+    check(seenNames == "00" and CVARS.UnitNameOwn == "1" and CVARS.UnitNameNPC == "1", "Namen über Figuren sind nur während der Tour aus: " .. tostring(seenNames))
+    check(seenSkill == "150 ; 150" and ns.PlayerSkill(356) == 7, "Im Bild stehen Beispiel-Berufe, nicht die eigenen: " .. tostring(seenSkill))
+    SKILLS = {}
     Screenshot = nil
 end
 

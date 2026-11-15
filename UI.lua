@@ -375,7 +375,7 @@ function ns.UpdateUIInner()
     elseif ns.post and ns.post.version and not ns.staging then
         status = L["Post: version "] .. ns.post.version
     else
-        status = "Roadbook " .. ns.VERSION
+        status = "Roadbook " .. ((ns.staging and ns.VERSION == "dev") and "" or ns.VERSION)   -- Fotos ohne „dev“
     end
     if not _G.TomTom then status = L["|cffff6060TomTom missing|r · "] .. status end
     local errs = ns.SessionErrors()

@@ -462,6 +462,8 @@ local function demoData()
         L["Estimate: straight line × 1.3 on foot, flights from known flight points, +45 s per zone change."],
     }, "\n")
     local function npc(name, zone, x, y, cost) return { id = 0, name = name, sub = L["Vendor"], map = 1454, zone = zone, x = x, y = y, cost = cost } end
+    -- erfundene Berufe (Fertigkeits-Nummer -> Stand), damit die eigenen nicht im Bild stehen
+    staging.skills = { [165] = { 120, 150 }, [393] = { 140, 150 }, [185] = { 80, 150 }, [356] = { 150, 150 } }
     staging.npcs = {
         npc("Trak'gen", "Orgrimmar", 53.4, 68.2, 40), npc("Olvia", "Orgrimmar", 45.1, 64.0, 75),
         npc("Shimra", "Orgrimmar", 48.6, 80.3, 110), npc("Jark", "Durotar", 51.2, 42.6, 260),
@@ -478,10 +480,21 @@ function ns.PhotoTour()
                     active = ns.C.activePlan, selected = ns.C.selectedPlan, note = ns.selectedNoteId }
     local staging = demoData()
     local round = staging.plans[1]
+    -- Namen über Figuren (der eigene samt Gilde, andere Spieler, NPCs) scheinen durch die
+    -- Fenster: für die Dauer der Tour ausblenden, danach wie vorher
+    local NAME_CVARS = { "UnitNameOwn", "UnitNameFriendlyPlayerName", "UnitNameEnemyPlayerName", "UnitNameNPC" }
+    local cvars = {}
+    if GetCVar and SetCVar then
+        for _, name in ipairs(NAME_CVARS) do
+            local ok, v = pcall(GetCVar, name)
+            if ok and v ~= nil then cvars[name] = v; pcall(SetCVar, name, "0") end
+        end
+    end
     local done = false
     local function finish()
         if done then return end
         done = true
+        for name, v in pairs(cvars) do pcall(SetCVar, name, v) end
         for _, f in ipairs({ ns.copyFrame, ns.trashFrame, ns.importFrame }) do if f then f:Hide() end end
         ns.staging = nil
         ns.travel, ns.C.activePlan, ns.C.selectedPlan, ns.selectedNoteId = saved.travel, saved.active, saved.selected, saved.note
