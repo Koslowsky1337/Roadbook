@@ -1,11 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.2.0
 
 - NPC search: a zone field lists only the NPCs in that zone, also far away ones (up to 20). `/rb find vendor in Orgrimmar` does the same.
 - NPC search: the text search also matches the title below the name, e.g. "portal" or "reagent". The text search finds every NPC and marks those of the other faction or another class.
 - Options: two settings for the NPC search, whether the categories also list the other faction and whether Class trainer lists all classes. By default they show what fits your character.
-- NPC search, professions: your own professions are green with your skill. Trainers show up to which skill they teach; those that cannot teach you anything new are grey and listed last. For Cooking, First Aid and Fishing at 150 the vendor of the Expert book comes first.
+- NPC search, professions: your own professions are green with your skill. Trainers show up to which skill they teach; those that cannot teach you anything new are grey and listed last. For Cooking, First Aid and Fishing at 150 the vendor of the Expert book comes first, at 225 the quest giver of the Artisan quest.
 - Options: how much time a flight must save before it is recommended, how many search results are listed, how long the trash keeps items, and whether undiscovered flight masters are announced in chat.
 - NPC search: "Copy /way" shows the TomTom command for the selected NPC to copy and share.
 

@@ -8,7 +8,9 @@ local L = ns.L
 -- jeder Client-Sprache gilt („Warrior Trainer“, „Journeyman Tailor“ …).
 -- Berufe: „skill“ ist die Fertigkeits-Nummer des Spiels. Bei Kochen, Erster
 -- Hilfe und Angeln lehren die Lehrer nur bis „plain“ (150); die Stufe danach
--- steht in einem Buch („book“, Item-Nummer), das ein Händler verkauft.
+-- steht in einem Buch („book“, Item-Nummer), das ein Händler verkauft, und die
+-- Stufe ab 225 gibt es als Quest („quest“, je Fraktion). Beides steht so in den
+-- Forever-Daten von QuestieDB (Bücher mit Händlern, Quests mit Questgebern).
 ---------------------------------------------------------------------------
 local TRAINER = 16
 local CATS = {
@@ -35,9 +37,9 @@ local CATS = {
     { key = "mining", label = L["Mining"], flag = TRAINER, titles = { "miner", "mining" }, skill = 186 },
     { key = "skinning", label = L["Skinning"], flag = TRAINER, titles = { "skinn" }, skill = 393 },
     { key = "tailoring", label = L["Tailoring"], flag = TRAINER, titles = { "tailor" }, skill = 197 },
-    { key = "cooking", label = L["Cooking"], flag = TRAINER, titles = { "cook", "butcher" }, skill = 185, plain = 150, book = 16072 },
-    { key = "firstaid", label = L["First Aid"], flag = TRAINER, titles = { "first aid", "physician", "surgeon", "medic" }, skill = 129, plain = 150, book = 16084 },
-    { key = "fishing", label = L["Fishing"], flag = TRAINER, titles = { "fish" }, skill = 356, plain = 150, book = 16083 },
+    { key = "cooking", label = L["Cooking"], flag = TRAINER, titles = { "cook", "butcher" }, skill = 185, plain = 150, book = 16072, quest = { H = 6610, A = 6610 } },
+    { key = "firstaid", label = L["First Aid"], flag = TRAINER, titles = { "first aid", "physician", "surgeon", "medic" }, skill = 129, plain = 150, book = 16084, quest = { H = 6622, A = 6624 } },
+    { key = "fishing", label = L["Fishing"], flag = TRAINER, titles = { "fish" }, skill = 356, plain = 150, book = 16083, quest = { H = 6607, A = 6607 } },
 }
 
 local CLASSES = { "warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid" }
@@ -271,12 +273,20 @@ function ns.FindNpcs(query, limit)
         cands[#cands + 1] = { id = id, spot = spot, d = d, cap = cap, low = low, book = book,
                               rank = book and 0 or (low and 2 or 1) }
     end
-    -- Kochen, Erste Hilfe, Angeln ab 150: die nächste Stufe steht in einem Buch beim Händler
+    -- Kochen, Erste Hilfe, Angeln: ab 150 steht die nächste Stufe in einem Buch beim
+    -- Händler, ab 225 gibt es sie als Quest
     if cat and cat.book and myMax == cat.plain and _G.ItemDB and ItemDB.Get then
         local okV, vendors = pcall(ItemDB.Get, cat.book, "vendors")
         local okN, item = pcall(ItemDB.Get, cat.book, "name")
         for _, id in ipairs(okV and type(vendors) == "table" and vendors or {}) do
-            add(id, okN and type(item) == "string" and item or "?")
+            add(id, (L["sells %s"]):format(okN and type(item) == "string" and item or "?"))
+        end
+    elseif cat and cat.quest and myMax == 225 and _G.QuestDB and QuestDB.Get then
+        local q = cat.quest[faction]
+        local okS, started = pcall(QuestDB.Get, q, "startedBy")
+        local okN, name = pcall(QuestDB.Get, q, "name")
+        for _, id in ipairs(okS and type(started) == "table" and type(started[1]) == "table" and started[1] or {}) do
+            add(id, (L["quest: %s"]):format(okN and type(name) == "string" and name or "?"))
         end
     end
     for i = 1, #idx.ids do
@@ -364,7 +374,7 @@ end
 ---------------------------------------------------------------------------
 -- Reiter „NPC-Suche“
 ---------------------------------------------------------------------------
-local LEFT_W = 180
+local LEFT_W = 220
 
 function ns.Build_search(panel, tab)
     local head = ns.FontString(panel, "GameFontNormal")
@@ -388,9 +398,12 @@ function ns.Build_search(panel, tab)
 
     local catList = ns.CreateScrollList(listInset, 20, function(parent)
         local row = ns.CreateRow(parent)
+        row.rank = ns.FontString(row, "GameFontHighlightSmall", "RIGHT")   -- eigener Stand im Beruf
+        row.rank:SetPoint("RIGHT", -4, 0)
+        row.rank:SetWidth(52)
         row.text = ns.FontString(row, "GameFontHighlight")
         row.text:SetPoint("LEFT", 12, 0)
-        row.text:SetPoint("RIGHT", -4, 0)
+        row.text:SetPoint("RIGHT", row.rank, "LEFT", -2, 0)
         row.text:SetWordWrap(false)
         row:SetScript("OnClick", function(self)
             if not self.cat then return end
@@ -500,6 +513,7 @@ function ns.Build_search(panel, tab)
                 row.text:SetFontObject(GameFontNormalSmall)
                 row.text:SetPoint("LEFT", 4, 0)
                 row.text:SetText(c.head)
+                row.rank:SetText("")
                 row.text:SetTextColor(1, 0.82, 0)
             else
                 row:Enable()
@@ -508,7 +522,8 @@ function ns.Build_search(panel, tab)
                 local rank, max = nil, nil
                 if c.skill then rank, max = ns.PlayerSkill(c.skill) end
                 -- eigene Berufe grün, mit Stand
-                row.text:SetText(rank and ("|cff40ff40%s  %d/%d|r"):format(c.label, rank, max) or c.label)
+                row.text:SetText(rank and ("|cff40ff40%s|r"):format(c.label) or c.label)
+                row.rank:SetText(rank and ("|cff40ff40%d/%d|r"):format(rank, max) or "")
                 row.text:SetTextColor(1, 1, 1)
                 row.selected:SetShown(c == selCat)
             end
@@ -520,7 +535,7 @@ function ns.Build_search(panel, tab)
             if r.unfit then
                 text = ("|cff999999%s (%s)|r"):format(r.name, r.unfit)
             elseif r.book then
-                text = ("%s |cff40ff40(%s)|r"):format(r.name, (L["sells %s"]):format(r.book))
+                text = ("%s |cff40ff40(%s)|r"):format(r.name, r.book)
             elseif r.low then
                 text = ("|cff999999%s (%s)|r"):format(r.name, (L["up to %d"]):format(r.cap))
             elseif r.cap then
@@ -541,7 +556,7 @@ function ns.Build_search(panel, tab)
         if has then
             local extra = ""
             if selected.book then
-                extra = " · " .. (L["sells %s"]):format(selected.book)
+                extra = " · " .. selected.book
             elseif selected.cap then
                 extra = " · " .. (selected.low and L["teaches up to skill %d – nothing new for you"] or L["teaches up to skill %d"]):format(selected.cap)
             end

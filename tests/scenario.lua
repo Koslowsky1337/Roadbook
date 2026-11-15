@@ -950,8 +950,11 @@ check(r1 == 150 and m1 == 150 and ns.PlayerSkill(171) == nil, "Eigene Berufe wer
 tl = ns.FindNpcs({ cat = cat("tailoring") })
 check(tl and tl[1].name == "Schneidermeisterin" and tl[2].low, "Mit 150/150: der Lehrer, der weiterhilft, zuerst; der andere grau am Ende")
 local fi = ns.FindNpcs({ cat = cat("fishing") })
-check(fi and #fi == 2 and fi[1].name == "Ferner Händler" and fi[1].book == "Angelbuch" and fi[2].low,
+check(fi and #fi == 2 and fi[1].name == "Ferner Händler" and fi[1].book == ns.L["sells %s"]:format("Angelbuch") and fi[2].low,
       "Angeln 150: zuerst der Händler mit dem Buch, der Lehrer bringt nichts Neues")
+SKILLS = { { name = "Angeln", rank = 225, max = 225, line = 356 } }
+fi = ns.FindNpcs({ cat = cat("fishing") })
+check(fi and fi[1].name == "Sorek" and fi[1].book == ns.L["quest: %s"]:format("Angelquest"), "Angeln 225: zuerst der Questgeber")
 SKILLS = {}
 fi = ns.FindNpcs({ cat = cat("fishing") })
 check(fi and #fi == 1 and fi[1].cap == 150 and not fi[1].low, "Ohne Angeln: nur der Lehrer, lehrt bis 150")

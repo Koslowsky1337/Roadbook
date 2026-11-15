@@ -448,6 +448,7 @@ L["Finds NPCs by a part of their name or title and lists the nearest ones by tra
 L["Zone:"] = "Gebiet:"
 L["up to %d"] = "bis %d"
 L["sells %s"] = "verkauft %s"
+L["quest: %s"] = "Quest: %s"
 L["teaches up to skill %d"] = "lehrt bis Fertigkeit %d"
 L["teaches up to skill %d – nothing new for you"] = "lehrt bis Fertigkeit %d – für dich nichts Neues"
 L["other faction"] = "andere Fraktion"

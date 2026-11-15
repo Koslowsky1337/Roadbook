@@ -42,9 +42,9 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] „Weg zeigen“ setzt den Pfeil; bleibt er dort, auch wenn ein Plan geladen ist?
 - [ ] „Zum Plan hinzufügen“ hängt den NPC an den geladenen bzw. gewählten Plan.
 - [ ] `/rb suche händler` und `/rb suche <Namensteil>`.
-- [ ] Nach 1.1.0 (noch ohne Tag): Feld „Gebiet“ – z. B. Kategorie Händler + „Orgrimmar“ listet bis zu 20 Händler dort, auch von weit weg; Dauer in `/rb log`. `/rb suche händler in orgrimmar`.
+- [ ] 1.2.0 (Tag `v1.2.0` am 15.11.2026): Feld „Gebiet“ – z. B. Kategorie Händler + „Orgrimmar“ listet bis zu 20 Händler dort, auch von weit weg; Dauer in `/rb log`. `/rb suche händler in orgrimmar`.
 - [ ] Optionen: neue Regler (Flug-Ersparnis, Trefferzahl, Papierkorb-Dauer) und der Haken „Unbekannte Flugmeister im Chat melden“ wirken; der Reiter ist jetzt zweispaltig – steht nichts über oder übereinander?
-- [ ] Berufe: deine eigenen Berufe sind links grün mit Stand (z. B. „Angeln 150/150“). Lehrer zeigen „(bis 150/225/300)“; wer dir nichts Neues beibringt, steht grau am Ende. Angeln bei 150: zuerst der Händler mit dem Buch – stimmt das auf Forever, oder lernt man dort anders weiter?
+- [ ] Berufe: deine eigenen Berufe sind links grün mit Stand (z. B. „Angeln 150/150“). Lehrer zeigen „(bis 150/225/300)“; wer dir nichts Neues beibringt, steht grau am Ende. Angeln bei 150: zuerst der Händler mit dem Buch, bei 225 der Questgeber (Bücher, Händler und Quests stehen so in den Forever-Daten von QuestieDB; ob das Buch im Spiel wirklich die Stufe freischaltet, zeigt erst der Kauf).
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
 - [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 

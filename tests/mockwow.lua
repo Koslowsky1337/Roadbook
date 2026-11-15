@@ -230,6 +230,7 @@ QuestDB = DB({
     [894] = { finishedBy = { nil, { 4141 } } }, [6541] = { finishedBy = { { 8582 } } },
     [97003] = { finishedBy = { { 267310 } } }, [872] = { finishedBy = { { 3429 } } },
     [6401] = { finishedBy = { { 11864 } } }, [5722] = { finishedBy = { { 11834 } } },
+    [6607] = { name = "Angelquest", startedBy = { { 3004 } } },
     [999] = { finishedBy = { { 1, 2 } } }, [998] = { finishedBy = {} },
 })
 NpcDB = DB({
