@@ -69,6 +69,16 @@ ns.SetPickupMax(600); ns.UpdateUI()
 scan("Optionen, Umweg 10 Min.")
 ns.SetPickupMax(120)
 
+-- Reiter NPC-Suche: leer, jede Kategorie, Namenssuche ohne Treffer
+ns.ShowFrame("search")
+scan("NPC-Suche")
+for _, row in ipairs(ALLFRAMES) do
+    if row.cat and row.scripts.OnClick then
+        row.scripts.OnClick(row)
+        scan("NPC-Suche " .. row.cat.key)
+    end
+end
+
 -- Reiter Makros: jedes Makro (neu, geändert, aktuell), im Kampf
 ns.ShowFrame("macros")
 scan("Makros")

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- New tab **NPC search**: pick a category (vendor, repair, innkeeper, banker, auctioneer, flight master, stable master, your class trainer, weapon master, riding and profession trainers) or type part of a name. Roadbook lists the nearest NPCs of your faction by travel time. *Show the way* sets a TomTom waypoint, *Add to plan* adds the NPC as a step.
+- `/rb find <name or category>` points the arrow straight at the nearest match.
+
 ## 1.0.0
 
 First release. Roadbook builds a turn-in round from your quest log, orders it by travel time (walking, known flight points, zeppelins, boats, tram) and drives the TomTom arrow from stop to stop. It also has your own plans, import and export as text, a notebook and a macro library. Requires TomTom and QuestieDB.

@@ -217,7 +217,15 @@ QS.log = {}
 C_QuestLog.GetNumQuestLogEntries = function() return #QS.log end
 C_QuestLog.GetInfo = function(i) local q = QS.log[i]; if q then return { questID = q.id, title = q.title, isHeader = q.header } end end
 
-local function DB(rows) return { Get = function(id, key) local r = rows[id]; return r and r[key] end } end
+local function DB(rows)
+    return {
+        Get = function(id, key) local r = rows[id]; return r and r[key] end,
+        -- Grunddaten ohne Übersetzung: im Test unter "raw_<Feld>" abgelegt
+        GetRaw = function(id, key) local r = rows[id]; return r and (r["raw_" .. key] or r[key]) end,
+        GetAllIds = function() local ids = {}; for id in pairs(rows) do ids[#ids + 1] = id end; table.sort(ids); return ids end,
+    }
+end
+UnitClass = function() return "Krieger", "WARRIOR" end
 QuestDB = DB({
     [894] = { finishedBy = { nil, { 4141 } } }, [6541] = { finishedBy = { { 8582 } } },
     [97003] = { finishedBy = { { 267310 } } }, [872] = { finishedBy = { { 3429 } } },
@@ -232,6 +240,14 @@ NpcDB = DB({
     [11834] = { name = "Maur Grimmtotem", spawns = { [2437] = { { -1, -1 } } } },
     [1] = { name = "Allianzler", friendlyToFaction = "A", spawns = { [17] = { { 58, 22 } } } },
     [2] = { name = "Hordler", friendlyToFaction = "H", spawns = { [17] = { { 70, 70 } } } },
+    -- für die NPC-Suche (Spieler steht im Brachland bei 57.6, 21.3)
+    [3001] = { name = "Naher Händler", npcFlags = 4 + 1, friendlyToFaction = "H", spawns = { [17] = { { 58, 23 } } } },
+    [3002] = { name = "Ferner Händler", npcFlags = 4 + 16384, friendlyToFaction = "AH", spawns = { [17] = { { 20, 80 }, { 30, 70 } } } },
+    [3003] = { name = "Allianz-Händler", npcFlags = 4, friendlyToFaction = "A", spawns = { [17] = { { 57.7, 21.4 } } } },
+    [3004] = { name = "Sorek", subName = "Kriegerlehrer", raw_subName = "Warrior Trainer", npcFlags = 16 + 3, friendlyToFaction = "H", spawns = { [17] = { { 50, 30 } } } },
+    [3005] = { name = "Zauberin", subName = "Magierlehrerin", raw_subName = "Mage Trainer", npcFlags = 16, friendlyToFaction = "H", spawns = { [17] = { { 57, 22 } } } },
+    [3006] = { name = "Schneiderin", subName = "Schneidergesellin", raw_subName = "Journeyman Tailor", npcFlags = 16, spawns = { [17] = { { 55, 25 } } } },
+    [3007] = { name = "Händler ohne Ort", npcFlags = 4, spawns = { [2437] = { { -1, -1 } } } },
 })
 ObjectDB = DB({ [4141] = { name = "Steuerkonsole", spawns = { [17] = { { 52.4, 11.65 } } } } })
 LibQuestieDB = { Support = { Get = function(n)

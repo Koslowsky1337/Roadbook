@@ -575,7 +575,12 @@ function ns.AddHereStep(plan, name)
     end
     local sub = GetSubZoneText and GetSubZoneText() or ""
     local title = (name and ns.Trim(name) ~= "" and name) or (sub ~= "" and sub) or (GetZoneText and GetZoneText()) or L["Remembered spot"]
-    local step = { type = "goto", map = map, x = x, y = y, zone = zone, title = title }
+    ns.AddSpotStep({ type = "goto", map = map, x = x, y = y, zone = zone, title = title }, plan)
+end
+
+-- Einen Ort als Schritt anhängen: an den geladenen Plan, sonst an den gewählten eigenen, sonst an einen neuen
+function ns.AddSpotStep(step, plan)
+    local title, zone, x, y = step.title, step.zone, step.x, step.y
     plan = plan or ns.ActivePlan()
     if not plan then
         -- ohne geladenen Plan: den gewählten eigenen Plan weiterführen statt jedes Mal einen neuen anzulegen
@@ -1818,6 +1823,7 @@ local function areaToUiMap(areaID)
     end
     return zoneMap[areaID]
 end
+ns.AreaToUiMap = areaToUiMap
 
 -- Alle Spawn-Punkte eines Abgabe-Ziels (NPC oder Objekt) als { map, x, y, name }
 local function finisherSpots(questID, faction)

@@ -931,4 +931,39 @@ check(#ns.KnownTaxiNodes(9002) == 0, "Leere Liste: nichts bekannt")
 ns.C.taxi = keepTaxi; ns.taxiVersion = ns.taxiVersion + 1
 check(#ERRORS_FORWARDED == errBase8, "Keine neuen Lua-Fehler in 0.8: " .. joined(ERRORS_FORWARDED))
 
+-- NPC-Suche (Spieler im Brachland bei 57.6, 21.3)
+PLAYER.map, PLAYER.x, PLAYER.y = 1413, 0.576, 0.213
+local function cat(key) for _, c in ipairs(ns.NpcCategories()) do if c.key == key then return c end end end
+local vend = ns.FindNpcs({ cat = cat("vendor") })
+check(vend and #vend == 2 and vend[1].name == "Naher Händler" and vend[2].name == "Ferner Händler",
+      "Händler: nächster zuerst, Allianz-Händler und Händler ohne Ort fehlen")
+check(vend and vend[2].x == 30 and vend[2].y == 70, "Bei mehreren Fundorten zählt der nächste")
+check(vend and vend[1].zone and vend[1].cost and vend[1].cost < vend[2].cost, "Treffer tragen Gebiet und Reisezeit")
+local tr = ns.FindNpcs({ cat = cat("class") })
+check(tr and #tr == 1 and tr[1].name == "Sorek" and tr[1].sub == "Kriegerlehrer", "Klassenlehrer über den englischen Grundtitel, nicht der nähere Magierlehrer")
+local tl = ns.FindNpcs({ cat = cat("tailoring") })
+check(tl and #tl == 1 and tl[1].name == "Schneiderin", "Berufslehrer über den Titel (Journeyman Tailor)")
+check(cat("pet") == nil and cat("repair") ~= nil, "Tierlehrer nur für Jäger")
+local byName = ns.FindNpcs({ text = "kadr" })
+check(byName and byName[1].name == "Kadrak", "Namenssuche mit Namensteil")
+local none, why = ns.FindNpcs({ text = "x" })
+check(none == nil and why == ns.L["Type at least two letters."], "Zu kurzer Suchtext wird abgelehnt")
+check(ns.FindNpcs({ text = "gibtsnicht" }) == nil, "Kein Treffer: nil")
+ns.GoToNpc(vend[1])
+check(joined(TT_List()):find("Naher Händler|Roadbook search", 1, true), "Weg zeigen setzt einen TomTom-Punkt: " .. joined(TT_List()))
+ns.GoToNpc(vend[2])
+check(not joined(TT_List()):find("Naher Händler|Roadbook search", 1, true), "Der vorige Such-Punkt verschwindet")
+ns.HandleSlash("suche händler")
+check(joined(TT_List()):find("Naher Händler|Roadbook search", 1, true), "/rb suche <Kategorie> führt zum nächsten")
+ns.HandleSlash("find sorek")
+check(joined(TT_List()):find("Sorek|Roadbook search", 1, true), "/rb find <Name> führt zum NPC")
+ns.DeactivatePlan(); RunTimers()
+local own = ns.GetPlan("e:" .. (function() local id = ns.NextId("p"); ns.C.plans[id] = { id = id, title = "Suchziel", steps = {} }; return id end)())
+ns.C.selectedPlan = own.id
+ns.AddNpcStep(tr[1])
+local got = ns.GetPlan(own.id)
+check(#got.steps == 1 and got.steps[1].type == "goto" and got.steps[1].title == "Sorek" and got.steps[1].map == 1413 and got.steps[1].x == 50,
+      "Zum Plan hinzufügen hängt den NPC als Schritt an")
+check(#ERRORS_FORWARDED == errBase8, "Keine Lua-Fehler in der NPC-Suche: " .. joined(ERRORS_FORWARDED))
+
 print(("Tests: %d ok, %d Fehler, %d Knöpfe geklickt"):format(passes, fails, clicked))

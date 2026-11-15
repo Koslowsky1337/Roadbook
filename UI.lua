@@ -243,8 +243,8 @@ end
 ---------------------------------------------------------------------------
 -- Hauptfenster
 ---------------------------------------------------------------------------
-local TAB_ORDER = { "plans", "notes", "macros", "options" }
-local TAB_TITLE = { plans = L["Plans"], notes = L["Notes"], macros = L["Macros"], options = L["Options"] }
+local TAB_ORDER = { "plans", "notes", "macros", "search", "options" }
+local TAB_TITLE = { plans = L["Plans"], notes = L["Notes"], macros = L["Macros"], search = L["NPC search"], options = L["Options"] }
 ns.tabs = {}
 
 local function SavePosition(f)

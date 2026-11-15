@@ -23,4 +23,5 @@ UI.lua
 TabPlans.lua
 TabNotes.lua
 TabMacros.lua
+Search.lua
 Share.lua

@@ -7,7 +7,7 @@ import os, re, sys
 ADDON = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIT = r'"((?:[^"\\\n]|\\.)*)"'
 # Im Deutschen gleich
-SAME_IN_GERMAN = {"Export: ", "Export", "%s · %s · %d/255", "Zeppelin %s – %s", "Tracker "}
+SAME_IN_GERMAN = {"Export: ", "Export", "%s · %s · %d/255", "Zeppelin %s – %s", "Tracker ", "Name:"}
 
 toc = open(os.path.join(ADDON, "Roadbook.toc"), encoding="utf-8").read()
 files = [l.strip().replace("\\", "/") for l in toc.splitlines() if l.strip() and not l.startswith("#")]

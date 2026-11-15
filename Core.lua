@@ -434,6 +434,7 @@ local HELP = {
     L["|cffffffff/rb minimap|r – show or hide the minimap button"],
     L["|cffffffff/rb log|r – show the log (|cffffffff/rb log clear|r)"],
     L["|cffffffff/rb import|r – import a plan from text · |cffffffff/rb export|r – show the selected plan as text"],
+    L["|cffffffff/rb find <name or category>|r – way to the nearest NPC (vendor, innkeeper, trainer …); without text: open the NPC search"],
     L["|cffffffff/rb fm|r – waypoint to an undiscovered flight master nearby"],
     L["|cffffffff/rb options|r – settings · |cffffffff/rb detour <seconds>|r – detour worth taking for an undiscovered flight master (0 = off)"],
     L["|cffffffff/rb debug|r – detailed log on/off · |cffffffff/rb layout|r – check the open windows for cut-off text"],
@@ -459,7 +460,7 @@ local ALIAS = {
     abgabe = "turnin", abgaben = "turnin", hier = "here", papierkorb = "trash",
     flugmeister = "fm", importieren = "import", exportieren = "export",
     umweg = "detour", optionen = "options", einstellungen = "options", settings = "options",
-    fotos = "shots", screenshots = "shots",
+    fotos = "shots", screenshots = "shots", suche = "find", finde = "find", npc = "find", search = "find",
 }
 
 local function planFor(rest)
@@ -504,6 +505,8 @@ function ns.HandleSlash(msg)
     elseif cmd == "export" then
         local plan = planFor(rest)
         if plan then ns.ShowCopy(L["Export: "] .. plan.title, ns.ExportPlan(plan)) else ns.Print(L["No plan loaded or selected."]) end
+    elseif cmd == "find" then
+        ns.FindCommand(rest)
     elseif cmd == "fm" then
         ns.WaypointNewTaxi()
     elseif cmd == "detour" then

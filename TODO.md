@@ -36,6 +36,13 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Reise-Abschnitt überspringen: „Weiter“ überspringt zuerst die blaue Zeile, beim zweiten Mal den Schritt; Rechtsklick auf die graue Zeile holt sie zurück.
 - [ ] Zeppelin auf demselben Kontinent (z. B. Undercity → Grom'gol für ein Ziel im Süden) wird statt des langen Fußwegs vorgeschlagen.
 
+**NPC-Suche (nach 1.0, noch nicht veröffentlicht)**
+- [ ] Spiel ganz neu starten (neue Datei `Search.lua`), dann Reiter „NPC-Suche“: jede Kategorie anklicken – kommt die Liste ohne spürbaren Ruckler? In `/rb log` steht je Suche die Dauer in ms.
+- [ ] Stimmen die Treffer: nächster Händler, Gastwirt, dein Klassenlehrer, ein Berufslehrer? Keine Allianz-NPCs dabei?
+- [ ] „Weg zeigen“ setzt den Pfeil; bleibt er dort, auch wenn ein Plan geladen ist?
+- [ ] „Zum Plan hinzufügen“ hängt den NPC an den geladenen bzw. gewählten Plan.
+- [ ] `/rb suche händler` und `/rb suche <Namensteil>`.
+
 **Zeppeline und Schiffe** (aus den Spieldaten bestätigt: Orgrimmar, Undercity, Grom'gol, Ratchet, Booty Bay)
 - [ ] Ziel auf dem anderen Kontinent: Pfeil zeigt zum Anleger, und der steht an der richtigen Stelle.
 - [ ] Aus Leatrix Maps übernommen, im Spiel noch nicht abgelaufen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande (laut Leatrix nur Horde) und alle Allianz-Linien samt Tiefenbahn und Feralas-Fähre. Wenn du dort vorbeikommst: stimmt der Anleger?
