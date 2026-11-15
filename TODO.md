@@ -48,7 +48,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
 - [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 
-**Versionshinweis (nach 1.2.0, noch ohne Tag)**
+**Versionshinweis (1.2.1, Tag `v1.2.1` am 15.11.2026)**
 - [ ] Optionen: Haken „Auf neuere Versionen hinweisen“ ist da, der Reiter passt weiterhin ins Fenster.
 - [ ] Kein Fehler beim Login und beim Betreten einer Gruppe. Der Hinweis selbst lässt sich nur mit einem zweiten Spieler prüfen, der eine andere Version hat; die Kopie im Spielordner („dev“) sendet und meldet nichts.
 
