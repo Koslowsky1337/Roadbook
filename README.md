@@ -122,7 +122,7 @@ Roadbook baut aus deinem Questlog eine Abgaberunde, sortiert sie nach Reisezeit 
 ## Credits
 
 - Waypoints and arrow: [TomTom](https://www.curseforge.com/wow/addons/tomtom) by Cladhaire (used through its public API, not included).
-- Quest and NPC data: [QuestieDB](https://www.curseforge.com/wow/addons/questiedb), licensed under GPL-3.0 (read at runtime, not included and not copied).
+- Quest and NPC data: [QuestieDB](https://www.curseforge.com/wow/addons/questiedb) by the Questie team (read at runtime through its API, not included and not copied; see its own license).
 - Boat, zeppelin and tram stops: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; positions of the zeppelin and ship masters from QuestieDB.
 
 ## License
