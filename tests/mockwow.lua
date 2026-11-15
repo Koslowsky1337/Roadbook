@@ -248,8 +248,15 @@ NpcDB = DB({
     [3005] = { name = "Zauberin", subName = "Magierlehrerin", raw_subName = "Mage Trainer", npcFlags = 16, friendlyToFaction = "H", spawns = { [17] = { { 57, 22 } } } },
     [3006] = { name = "Schneiderin", subName = "Schneidergesellin", raw_subName = "Journeyman Tailor", npcFlags = 16, spawns = { [17] = { { 55, 25 } } } },
     [3008] = { name = "Mulgore-Händler", subName = "Reagenzien", npcFlags = 4, friendlyToFaction = "H", spawns = { [406] = { { 40, 40 } } } },
+    [3009] = { name = "Schneidermeisterin", raw_subName = "Expert Tailor", npcFlags = 16, spawns = { [17] = { { 30, 60 } } } },
+    [3010] = { name = "Angler", raw_subName = "Fisherman", npcFlags = 16, spawns = { [17] = { { 57, 21 } } } },
     [3007] = { name = "Händler ohne Ort", npcFlags = 4, spawns = { [2437] = { { -1, -1 } } } },
 })
+ItemDB = DB({ [16083] = { name = "Angelbuch", vendors = { 3002 } } })
+-- Berufe des Spielers: Schneiderei 150/150, Angeln 150/150 (Tests schalten sie an)
+SKILLS = {}
+GetProfessions = function() local t = {}; for i = 1, #SKILLS do t[i] = i end; return unpack(t) end
+GetProfessionInfo = function(i) local s = SKILLS[i]; return s.name, nil, s.rank, s.max, nil, nil, s.line end
 ObjectDB = DB({ [4141] = { name = "Steuerkonsole", spawns = { [17] = { { 52.4, 11.65 } } } } })
 LibQuestieDB = { Support = { Get = function(n)
     if n == "ZoneDB" then return { private = { areaIdToUiMapId = "return { [17] = 1413, [406] = 1442, [215] = 1412 }",

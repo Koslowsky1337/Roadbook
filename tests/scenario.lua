@@ -942,7 +942,19 @@ check(vend and vend[1].zone and vend[1].cost and vend[1].cost < vend[2].cost, "T
 local tr = ns.FindNpcs({ cat = cat("class") })
 check(tr and #tr == 1 and tr[1].name == "Sorek" and tr[1].sub == "Kriegerlehrer", "Klassenlehrer über den englischen Grundtitel, nicht der nähere Magierlehrer")
 local tl = ns.FindNpcs({ cat = cat("tailoring") })
-check(tl and #tl == 1 and tl[1].name == "Schneiderin", "Berufslehrer über den Titel (Journeyman Tailor)")
+check(tl and #tl == 2 and tl[1].name == "Schneiderin" and tl[1].cap == 150 and tl[2].cap == 225 and not tl[1].low,
+      "Berufslehrer über den Titel, mit Lehrstufe (Journeyman 150, Expert 225)")
+SKILLS = { { name = "Schneiderei", rank = 150, max = 150, line = 197 }, { name = "Angeln", rank = 150, max = 150, line = 356 } }
+local r1, m1 = ns.PlayerSkill(197)
+check(r1 == 150 and m1 == 150 and ns.PlayerSkill(171) == nil, "Eigene Berufe werden erkannt")
+tl = ns.FindNpcs({ cat = cat("tailoring") })
+check(tl and tl[1].name == "Schneidermeisterin" and tl[2].low, "Mit 150/150: der Lehrer, der weiterhilft, zuerst; der andere grau am Ende")
+local fi = ns.FindNpcs({ cat = cat("fishing") })
+check(fi and #fi == 2 and fi[1].name == "Ferner Händler" and fi[1].book == "Angelbuch" and fi[2].low,
+      "Angeln 150: zuerst der Händler mit dem Buch, der Lehrer bringt nichts Neues")
+SKILLS = {}
+fi = ns.FindNpcs({ cat = cat("fishing") })
+check(fi and #fi == 1 and fi[1].cap == 150 and not fi[1].low, "Ohne Angeln: nur der Lehrer, lehrt bis 150")
 check(cat("pet") == nil and cat("repair") ~= nil, "Tierlehrer nur für Jäger")
 local byName = ns.FindNpcs({ text = "kadr" })
 check(byName and byName[1].name == "Kadrak", "Namenssuche mit Namensteil")

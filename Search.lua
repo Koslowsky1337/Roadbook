@@ -6,6 +6,9 @@ local L = ns.L
 -- Kategorien. „flag“ ist das NPC-Flag aus QuestieDB; „titles“ sind Teile des
 -- englischen Titels aus den Grunddaten (GetRaw), damit die Zuordnung in
 -- jeder Client-Sprache gilt („Warrior Trainer“, „Journeyman Tailor“ …).
+-- Berufe: „skill“ ist die Fertigkeits-Nummer des Spiels. Bei Kochen, Erster
+-- Hilfe und Angeln lehren die Lehrer nur bis „plain“ (150); die Stufe danach
+-- steht in einem Buch („book“, Item-Nummer), das ein Händler verkauft.
 ---------------------------------------------------------------------------
 local TRAINER = 16
 local CATS = {
@@ -23,18 +26,18 @@ local CATS = {
     { key = "weapon", label = L["Weapon master"], flag = TRAINER, titles = { "weapon master" } },
     { key = "riding", label = L["Riding trainer"], flag = TRAINER, titles = { "riding instructor" } },
     { head = L["Professions"] },
-    { key = "alchemy", label = L["Alchemy"], flag = TRAINER, titles = { "alchem" } },
-    { key = "blacksmithing", label = L["Blacksmithing"], flag = TRAINER, titles = { "blacksmith", "armor crafter", "weapon crafter" } },
-    { key = "enchanting", label = L["Enchanting"], flag = TRAINER, titles = { "enchant" } },
-    { key = "engineering", label = L["Engineering"], flag = TRAINER, titles = { "engineer" } },
-    { key = "herbalism", label = L["Herbalism"], flag = TRAINER, titles = { "herbalis" } },
-    { key = "leatherworking", label = L["Leatherworking"], flag = TRAINER, titles = { "leatherwork" } },
-    { key = "mining", label = L["Mining"], flag = TRAINER, titles = { "miner", "mining" } },
-    { key = "skinning", label = L["Skinning"], flag = TRAINER, titles = { "skinn" } },
-    { key = "tailoring", label = L["Tailoring"], flag = TRAINER, titles = { "tailor" } },
-    { key = "cooking", label = L["Cooking"], flag = TRAINER, titles = { "cook", "butcher" } },
-    { key = "firstaid", label = L["First Aid"], flag = TRAINER, titles = { "first aid", "physician", "surgeon", "medic" } },
-    { key = "fishing", label = L["Fishing"], flag = TRAINER, titles = { "fish" } },
+    { key = "alchemy", label = L["Alchemy"], flag = TRAINER, titles = { "alchem" }, skill = 171 },
+    { key = "blacksmithing", label = L["Blacksmithing"], flag = TRAINER, titles = { "blacksmith", "armor crafter", "weapon crafter", "armorsmith", "weaponsmith" }, skill = 164 },
+    { key = "enchanting", label = L["Enchanting"], flag = TRAINER, titles = { "enchant" }, skill = 333 },
+    { key = "engineering", label = L["Engineering"], flag = TRAINER, titles = { "engineer" }, skill = 202 },
+    { key = "herbalism", label = L["Herbalism"], flag = TRAINER, titles = { "herbalis" }, skill = 182 },
+    { key = "leatherworking", label = L["Leatherworking"], flag = TRAINER, titles = { "leatherwork", "leathercraft" }, skill = 165 },
+    { key = "mining", label = L["Mining"], flag = TRAINER, titles = { "miner", "mining" }, skill = 186 },
+    { key = "skinning", label = L["Skinning"], flag = TRAINER, titles = { "skinn" }, skill = 393 },
+    { key = "tailoring", label = L["Tailoring"], flag = TRAINER, titles = { "tailor" }, skill = 197 },
+    { key = "cooking", label = L["Cooking"], flag = TRAINER, titles = { "cook", "butcher" }, skill = 185, plain = 150, book = 16072 },
+    { key = "firstaid", label = L["First Aid"], flag = TRAINER, titles = { "first aid", "physician", "surgeon", "medic" }, skill = 129, plain = 150, book = 16084 },
+    { key = "fishing", label = L["Fishing"], flag = TRAINER, titles = { "fish" }, skill = 356, plain = 150, book = 16083 },
 }
 
 local CLASSES = { "warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid" }
@@ -145,6 +148,42 @@ local function inCategory(cat, i)
     return false
 end
 
+-- Rang und Höchstwert des Spielers in einem Beruf (nil: nicht gelernt)
+function ns.PlayerSkill(skill)
+    if GetProfessions and GetProfessionInfo then
+        local p = { GetProfessions() }
+        for k = 1, 6 do
+            if p[k] then
+                local ok, _, _, rank, max, _, _, line = pcall(GetProfessionInfo, p[k])
+                if ok and line == skill then return rank or 0, max or 0 end
+            end
+        end
+    end
+    local SI = _G.C_SkillInfo
+    if SI and SI.GetNumSkillLines and SI.GetSkillLineInfo then
+        local ok, n = pcall(SI.GetNumSkillLines)
+        for i = 1, ok and n or 0 do
+            local ok2, line = pcall(SI.GetSkillLineInfo, i)
+            if ok2 and type(line) == "table" and line.skillID == skill and not line.isHeader then
+                return line.rank or 0, line.maxRank or 0
+            end
+        end
+    end
+end
+
+-- Bis zu welchem Wert lehrt ein Berufslehrer? Steht im englischen Grundtitel
+-- („Journeyman Tailor“, „Expert Alchemist“ …); nil, wenn der Titel nichts sagt.
+local CAPS = { { "apprentice", 75 }, { "junior", 75 }, { "journeyman", 150 }, { "expert", 225 },
+               { "artisan", 300 }, { "master", 300 }, { "superior", 300 } }
+local function teachCap(id, cat)
+    if not cat.skill then return nil end
+    local t = rawTitle(id)
+    for _, c in ipairs(CAPS) do
+        if t:find(c[1], 1, true) then return c[2] end
+    end
+    return cat.plain
+end
+
 -- Passt der NPC nicht zu diesem Charakter? Liefert dann den Grund als Text.
 local function unfit(id, faction)
     local friendly = NpcDB.Get(id, "friendlyToFaction")
@@ -219,7 +258,27 @@ function ns.FindNpcs(query, limit)
     local faction = (UnitFactionGroup("player") == "Alliance") and "A" or "H"
 
     local otherFaction = ns.SearchOpt().otherFaction
+    -- Beruf: Lehrer, die dem Spieler nichts mehr beibringen (cap <= eigener Höchstwert), ans Ende
+    local cat = query.cat
+    local _, myMax = nil, nil
+    if cat and cat.skill then _, myMax = ns.PlayerSkill(cat.skill) end
     local cands, hits = {}, 0
+    local function add(id, book)
+        local spot, d = nearestSpawn(id, here, place)
+        if not spot then return end
+        local cap = cat and not book and teachCap(id, cat) or nil
+        local low = (cap and myMax and cap <= myMax) or nil
+        cands[#cands + 1] = { id = id, spot = spot, d = d, cap = cap, low = low, book = book,
+                              rank = book and 0 or (low and 2 or 1) }
+    end
+    -- Kochen, Erste Hilfe, Angeln ab 150: die nächste Stufe steht in einem Buch beim Händler
+    if cat and cat.book and myMax == cat.plain and _G.ItemDB and ItemDB.Get then
+        local okV, vendors = pcall(ItemDB.Get, cat.book, "vendors")
+        local okN, item = pcall(ItemDB.Get, cat.book, "name")
+        for _, id in ipairs(okV and type(vendors) == "table" and vendors or {}) do
+            add(id, okN and type(item) == "string" and item or "?")
+        end
+    end
     for i = 1, #idx.ids do
         local id = idx.ids[i]
         local ok
@@ -232,11 +291,13 @@ function ns.FindNpcs(query, limit)
         if ok then
             hits = hits + 1
             if hits > MAX_TEXT_HITS and text then break end
-            local spot, d = nearestSpawn(id, here, place)
-            if spot then cands[#cands + 1] = { id = id, spot = spot, d = d } end
+            add(id)
         end
     end
-    table.sort(cands, function(a, b) return a.d < b.d end)
+    table.sort(cands, function(a, b)
+        if a.rank ~= b.rank then return a.rank < b.rank end
+        return a.d < b.d
+    end)
 
     local out = {}
     local want = limit or math.max(ns.Opt("searchHits"), place and PLACE_LIST or 0)
@@ -248,9 +309,13 @@ function ns.FindNpcs(query, limit)
             id = c.id, name = NpcDB.Get(c.id, "name"), sub = type(sub) == "string" and sub or nil,
             map = c.spot.map, x = c.spot.x, y = c.spot.y, zone = info and info.name or "?",
             cost = ns.LegCost(here, c.spot.p) or 1e9, unfit = unfit(c.id, faction),
+            cap = c.cap, low = c.low, book = c.book, rank = c.rank,
         }
     end
-    table.sort(out, function(a, b) return a.cost < b.cost end)
+    table.sort(out, function(a, b)
+        if a.rank ~= b.rank then return a.rank < b.rank end
+        return a.cost < b.cost
+    end)
     for i = #out, want + 1, -1 do out[i] = nil end
     ns.Log("I", "search", "NPC search %s%s: %d hits, %d with a position, %.0f ms",
         text and ("\"" .. text .. "\"") or query.cat.key, place and (" in \"" .. place .. "\"") or "", hits, #cands, (debugprofilestop and debugprofilestop() or 0) - t0)
@@ -440,7 +505,10 @@ function ns.Build_search(panel, tab)
                 row:Enable()
                 row.text:SetFontObject(GameFontHighlight)
                 row.text:SetPoint("LEFT", 12, 0)
-                row.text:SetText(c.label)
+                local rank, max = nil, nil
+                if c.skill then rank, max = ns.PlayerSkill(c.skill) end
+                -- eigene Berufe grün, mit Stand
+                row.text:SetText(rank and ("|cff40ff40%s  %d/%d|r"):format(c.label, rank, max) or c.label)
                 row.text:SetTextColor(1, 1, 1)
                 row.selected:SetShown(c == selCat)
             end
@@ -448,7 +516,17 @@ function ns.Build_search(panel, tab)
 
         resList:SetData(results or {}, function(row, r)
             row.result = r
-            row.text:SetText(r.unfit and ("|cff999999%s (%s)|r"):format(r.name, r.unfit) or r.name)
+            local text = r.name
+            if r.unfit then
+                text = ("|cff999999%s (%s)|r"):format(r.name, r.unfit)
+            elseif r.book then
+                text = ("%s |cff40ff40(%s)|r"):format(r.name, (L["sells %s"]):format(r.book))
+            elseif r.low then
+                text = ("|cff999999%s (%s)|r"):format(r.name, (L["up to %d"]):format(r.cap))
+            elseif r.cap then
+                text = ("%s |cffffd100(%s)|r"):format(r.name, (L["up to %d"]):format(r.cap))
+            end
+            row.text:SetText(text)
             row.where:SetText(("%s · %s"):format(r.zone, ns.FmtTime(r.cost)))
             row.selected:SetShown(r == selected)
         end)
@@ -461,7 +539,13 @@ function ns.Build_search(panel, tab)
         bAdd:SetEnabled(has)
         bWay:SetEnabled(has)
         if has then
-            info:SetText(("%s%s %.1f %.1f"):format(selected.sub and (selected.sub .. " · ") or "", selected.zone, selected.x, selected.y))
+            local extra = ""
+            if selected.book then
+                extra = " · " .. (L["sells %s"]):format(selected.book)
+            elseif selected.cap then
+                extra = " · " .. (selected.low and L["teaches up to skill %d – nothing new for you"] or L["teaches up to skill %d"]):format(selected.cap)
+            end
+            info:SetText(("%s%s %.1f %.1f%s"):format(selected.sub and (selected.sub .. " · ") or "", selected.zone, selected.x, selected.y, extra))
         end
     end
 end
