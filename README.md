@@ -35,7 +35,7 @@ Game version: WoW Forever (Interface 16001).
 
 ## Installation
 
-Install Roadbook with the CurseForge app, or download a release, unpack it and put the `Roadbook` folder into `Interface\AddOns`. Install TomTom and QuestieDB the same way.
+Install Roadbook with the CurseForge app ([Roadbook on CurseForge](https://www.curseforge.com/wow/addons/roadbook)), or download a release there, unpack it and put the `Roadbook` folder into `Interface\AddOns`. Install TomTom and QuestieDB the same way.
 
 ## Commands
 
