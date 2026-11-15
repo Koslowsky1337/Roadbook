@@ -1,6 +1,7 @@
 package-as: Roadbook
 
 ignore:
+  - .github
   - tests
   - media
   - "*.md"

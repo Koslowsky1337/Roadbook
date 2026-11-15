@@ -1,0 +1,69 @@
+name: Release
+
+# Builds the addon zip and a GitHub release for every pushed tag "v*".
+# "Run workflow" with a tag does the same for a tag that already exists.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag, e.g. v1.0.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      ADDON: Roadbook
+      CURSEFORGE_URL: https://www.curseforge.com/wow/addons/roadbook
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check the tag name
+        run: |
+          [[ "$TAG" =~ ^v[0-9A-Za-z._-]+$ ]] || { echo "Unexpected tag name: $TAG"; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version="${TAG#v}"
+          notes="$RUNNER_TEMP/notes.md"
+          awk -v h="## $version" '{ sub(/\r$/, "") } $0 == h { on = 1; next } on && /^## / { exit } on' CHANGELOG.md > "$notes"
+          grep -q '[^[:space:]]' "$notes" || echo "$ADDON $version" > "$notes"
+          printf '\n[%s on CurseForge](%s)\n' "$ADDON" "$CURSEFORGE_URL" >> "$notes"
+          cat "$notes"
+
+      - name: Build the addon zip
+        run: |
+          out="$RUNNER_TEMP/pkg/$ADDON"
+          mkdir -p "$out"
+          # Same exclusions as the ignore list in .pkgmeta, plus the repository's own files
+          git ls-files -z -- . ':!tests' ':!media' ':!*.md' ':!.github' ':!.pkgmeta' ':!.gitignore' \
+            | xargs -0 cp --parents -t "$out"
+          sed -i "s/@project-version@/$TAG/g" "$out/$ADDON.toc"
+          grep -q "^## Version: $TAG" "$out/$ADDON.toc" || { echo "Version was not written into the .toc"; exit 1; }
+          ! grep -rq '@project-version@' "$out" || { echo "Placeholder left in the package"; exit 1; }
+          (cd "$RUNNER_TEMP/pkg" && zip -qr "$RUNNER_TEMP/$ADDON-$TAG.zip" "$ADDON")
+          unzip -l "$RUNNER_TEMP/$ADDON-$TAG.zip"
+
+      - name: Create or update the release
+        run: |
+          version="${TAG#v}"
+          zip="$RUNNER_TEMP/$ADDON-$TAG.zip"
+          pre=false
+          [[ "$TAG" == *-* ]] && pre=true
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --title "$ADDON $version" --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$pre"
+            gh release upload "$TAG" "$zip" --clobber
+          else
+            gh release create "$TAG" "$zip" --verify-tag --title "$ADDON $version" \
+              --notes-file "$RUNNER_TEMP/notes.md" --prerelease="$pre"
+          fi
