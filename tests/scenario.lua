@@ -954,11 +954,17 @@ local inZone = ns.FindNpcs({ cat = cat("vendor"), place = " mulg " })
 check(inZone and #inZone == 1 and inZone[1].name == "Mulgore-Händler", "Mit Gebiet: nur die Händler dort, auch wenn weit weg")
 check(ns.FindNpcs({ cat = cat("vendor"), place = "nirgendwo" }) == nil, "Unbekanntes Gebiet: kein Treffer")
 local byTitle = ns.FindNpcs({ text = "reagenz" })
-check(byTitle and #byTitle == 1 and byTitle[1].name == "Mulgore-Händler", "Textsuche trifft auch den Titel")
-local both = ns.FindNpcs({ text = "reagenz", anyFaction = true })
-check(both and #both == 2, "Auch andere Fraktion: Titelsuche listet beide Seiten")
+check(byTitle and #byTitle == 2 and byTitle[2].name == "Mulgore-Händler", "Textsuche trifft auch den Titel")
 local foe = ns.FindNpcs({ text = "allianz-h" })
-check(foe and #foe == 1, "Namenssuche findet auch NPCs der anderen Seite; die Titelsuche nicht")
+check(foe and #foe == 1 and foe[1].unfit == ns.L["other faction"], "Textsuche findet die andere Fraktion und markiert sie")
+local mage = ns.FindNpcs({ text = "magierlehr" })
+check(mage and mage[1].unfit == ns.L["other class"] and not tr[1].unfit, "Lehrer einer anderen Klasse ist markiert, der eigene nicht")
+ns.SearchOpt().otherFaction = true
+check(#ns.FindNpcs({ cat = cat("vendor") }) == 4, "Option: Kategorien zeigen auch die andere Fraktion")
+ns.SearchOpt().otherFaction = nil
+ns.SearchOpt().allClasses = true
+check(#ns.FindNpcs({ cat = cat("class") }) == 2, "Option: Klassenlehrer zeigt alle Klassen")
+ns.SearchOpt().allClasses = nil
 ns.HandleSlash("suche händler in mulgore")
 check(joined(TT_List()):find("Mulgore-Händler|Roadbook search", 1, true), "/rb suche <Kategorie> in <Gebiet>")
 ns.GoToNpc(vend[1])

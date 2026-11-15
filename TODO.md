@@ -44,7 +44,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] `/rb suche händler` und `/rb suche <Namensteil>`.
 - [ ] Nach 1.1.0 (noch ohne Tag): Feld „Gebiet“ – z. B. Kategorie Händler + „Orgrimmar“ listet bis zu 20 Händler dort, auch von weit weg; Dauer in `/rb log`. `/rb suche händler in orgrimmar`.
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
-- [ ] Haken „Auch andere Fraktion“ listet Allianz-NPCs mit; „/way kopieren“ öffnet das Kopierfenster mit `/way <Gebiet> x y Name`, und der Befehl funktioniert in TomTom.
+- [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 
 **Zeppeline und Schiffe** (aus den Spieldaten bestätigt: Orgrimmar, Undercity, Grom'gol, Ratchet, Booty Bay)
 - [ ] Ziel auf dem anderen Kontinent: Pfeil zeigt zum Anleger, und der steht an der richtigen Stelle.

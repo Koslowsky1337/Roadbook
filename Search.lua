@@ -37,9 +37,18 @@ local CATS = {
     { key = "fishing", label = L["Fishing"], flag = TRAINER, titles = { "fish" } },
 }
 
+local CLASSES = { "warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid" }
+
 local function playerClass()
     local _, token = UnitClass("player")
     return token or ""
+end
+
+-- Einstellungen der Suche (Reiter Optionen): otherFaction, allClasses.
+-- Standard: Kategorien zeigen nur, was zu diesem Charakter passt.
+function ns.SearchOpt()
+    ns.DB.search = ns.DB.search or {}
+    return ns.DB.search
 end
 
 -- Kategorien für diesen Charakter (Tierlehrer nur für Jäger)
@@ -121,13 +130,31 @@ local function hasFlag(flags, f) return flags % (f * 2) >= f end
 
 local function inCategory(cat, i)
     if not hasFlag(idx.flags[i], cat.flag) then return false end
-    local titles = cat.class and { playerClass():lower() .. " trainer" } or cat.titles
-    if not titles then return true end
     local t = rawTitle(idx.ids[i])
-    for _, part in ipairs(titles) do
+    if cat.class then
+        if not ns.SearchOpt().allClasses then return t:find(playerClass():lower() .. " trainer", 1, true) ~= nil end
+        for _, c in ipairs(CLASSES) do
+            if t:find(c .. " trainer", 1, true) then return true end
+        end
+        return false
+    end
+    if not cat.titles then return true end
+    for _, part in ipairs(cat.titles) do
         if t:find(part, 1, true) then return true end
     end
     return false
+end
+
+-- Passt der NPC nicht zu diesem Charakter? Liefert dann den Grund als Text.
+local function unfit(id, faction)
+    local friendly = NpcDB.Get(id, "friendlyToFaction")
+    if type(friendly) == "string" and friendly ~= "" and not friendly:find(faction, 1, true) then
+        return L["other faction"]
+    end
+    local t, mine = rawTitle(id), playerClass():lower()
+    for _, c in ipairs(CLASSES) do
+        if c ~= mine and t:find(c .. " trainer", 1, true) then return L["other class"] end
+    end
 end
 
 local zoneNames = {}
@@ -175,6 +202,8 @@ local PLACE_LIST = 20       -- mit Gebiet: so viele Treffer werden gelistet
 
 -- query = { cat = <Kategorie> } oder { text = "Teil von Name oder Titel" }, dazu
 -- wahlweise place = "Teil des Gebietsnamens" (dann nur Treffer dort, längere Liste).
+-- Die Textsuche findet alles; Kategorien zeigen die andere Fraktion nur, wenn das
+-- in den Optionen an ist. Unpassende Treffer tragen „unfit“ (Grund als Text).
 -- Liefert die nächsten NPCs nach Reisezeit, oder nil und eine Meldung.
 function ns.FindNpcs(query, limit)
     if ns.staging then return ns.staging.npcs end   -- Fototour: Beispieltreffer
@@ -189,21 +218,16 @@ function ns.FindNpcs(query, limit)
     local t0 = debugprofilestop and debugprofilestop() or 0
     local faction = (UnitFactionGroup("player") == "Alliance") and "A" or "H"
 
+    local otherFaction = ns.SearchOpt().otherFaction
     local cands, hits = {}, 0
     for i = 1, #idx.ids do
         local id = idx.ids[i]
         local ok
         if text then
-            -- Treffer im Namen: genau dieser NPC ist gemeint, egal welche Seite.
-            -- Treffer nur im Titel („Reagenzien“) ist eine Dienst-Suche wie eine Kategorie.
-            ok = idx.names[i]:find(text, 1, true) ~= nil
-            if not ok and idx.subs[i]:find(text, 1, true) then ok = "service" end
+            ok = idx.names[i]:find(text, 1, true) ~= nil or idx.subs[i]:find(text, 1, true) ~= nil
         else
-            ok = inCategory(query.cat, i) and "service"
-        end
-        if ok == "service" and not query.anyFaction then
-            local friendly = NpcDB.Get(id, "friendlyToFaction")
-            ok = not (type(friendly) == "string" and friendly ~= "" and not friendly:find(faction, 1, true))
+            ok = inCategory(query.cat, i)
+                and (otherFaction or unfit(id, faction) ~= L["other faction"])
         end
         if ok then
             hits = hits + 1
@@ -222,7 +246,7 @@ function ns.FindNpcs(query, limit)
         out[#out + 1] = {
             id = c.id, name = NpcDB.Get(c.id, "name"), sub = type(sub) == "string" and sub or nil,
             map = c.spot.map, x = c.spot.x, y = c.spot.y, zone = info and info.name or "?",
-            cost = ns.LegCost(here, c.spot.p) or 1e9,
+            cost = ns.LegCost(here, c.spot.p) or 1e9, unfit = unfit(c.id, faction),
         }
     end
     table.sort(out, function(a, b) return a.cost < b.cost end)
@@ -287,11 +311,10 @@ function ns.Build_search(panel, tab)
     listInset:SetWidth(LEFT_W)
 
     local selCat, results, selected, message
-    local edit, placeEdit, anyFaction
+    local edit, placeEdit
 
     local function run(query)
         query.place = placeEdit:GetText()
-        query.anyFaction = anyFaction:GetChecked() and true or false
         results, message = ns.FindNpcs(query)
         selected = results and results[1] or nil
         ns.UpdateUI()
@@ -343,18 +366,6 @@ function ns.Build_search(panel, tab)
         run({ text = text })
     end
     placeEdit:SetScript("OnEnterPressed", runText)
-    anyFaction = ns.AutoWrap(CreateFrame("CheckButton", nil, right, "UICheckButtonTemplate"), "search-faction")
-    anyFaction:SetSize(24, 24)
-    anyFaction:SetPoint("LEFT", placeEdit, "RIGHT", 8, 0)
-    local anyText = ns.FontString(right, "GameFontHighlightSmall")
-    anyText:SetPoint("LEFT", anyFaction, "RIGHT", 2, 0)
-    anyText:SetText(L["Other faction too"])
-    ns.SetTooltip(anyFaction, L["Other faction too"],
-        L["Categories and title matches normally list only NPCs of your own faction. Ticked, the other faction's NPCs are listed as well, e.g. to share their position."])
-    anyFaction:SetScript("OnClick", function() if results then runText() end end)
-    placeEdit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    edit:SetScript("OnEnterPressed", runText)
-    edit:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     local bSearch = ns.CreateButton(right, L["Search"], 90, runText)
     bSearch:SetPoint("LEFT", edit, "RIGHT", 8, 0)
     ns.SetTooltip(bSearch, L["Search"], L["Finds NPCs by a part of their name or title and lists the nearest ones by travel time. With a zone, only NPCs there are listed."])
@@ -436,7 +447,7 @@ function ns.Build_search(panel, tab)
 
         resList:SetData(results or {}, function(row, r)
             row.result = r
-            row.text:SetText(r.name)
+            row.text:SetText(r.unfit and ("|cff999999%s (%s)|r"):format(r.name, r.unfit) or r.name)
             row.where:SetText(("%s · %s"):format(r.zone, ns.FmtTime(r.cost)))
             row.selected:SetShown(r == selected)
         end)

@@ -3,7 +3,8 @@
 ## Unreleased
 
 - NPC search: a zone field lists only the NPCs in that zone, also far away ones (up to 20). `/rb find vendor in Orgrimmar` does the same.
-- NPC search: the text search also matches the title below the name, e.g. "portal" or "reagent". Title matches only list NPCs of your own faction, unless you tick "Other faction too".
+- NPC search: the text search also matches the title below the name, e.g. "portal" or "reagent". The text search finds every NPC and marks those of the other faction or another class.
+- Options: two settings for the NPC search, whether the categories also list the other faction and whether Class trainer lists all classes. By default they show what fits your character.
 - NPC search: "Copy /way" shows the TomTom command for the selected NPC to copy and share.
 
 ## 1.1.0

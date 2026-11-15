@@ -231,6 +231,20 @@ function ns.Build_options(panel, tab)
     local plus = ns.CreateButton(panel, "+", 28, function() ns.SetPickupMax(ns.PickupMax() + ns.PICKUP_STEP) end)
     plus:SetPoint("LEFT", value, "RIGHT", 6, 0)
 
+    y = y - 40
+    local sTitle = ns.FontString(panel, "GameFontNormal")
+    sTitle:SetPoint("TOPLEFT", 4, y)
+    sTitle:SetText(L["NPC search"])
+    y = y - 18
+    checks[#checks + 1] = check(L["Categories also list the other faction"],
+        L["Unticked, the categories only list NPCs of your own faction. The text search always finds everything and marks what does not fit your character."],
+        function() return ns.SearchOpt().otherFaction and true or false end,
+        function(v) ns.SearchOpt().otherFaction = v end)
+    checks[#checks + 1] = check(L["Class trainer lists all classes"],
+        L["Unticked, the category Class trainer only lists the trainers of your own class."],
+        function() return ns.SearchOpt().allClasses and true or false end,
+        function(v) ns.SearchOpt().allClasses = v end)
+
     tab.update = function()
         for _, cb in ipairs(checks) do cb:SetChecked(cb.get()) end
         value:SetText((L["Detour up to: %s"]):format(ns.PickupText()))
