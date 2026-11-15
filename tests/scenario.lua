@@ -871,17 +871,17 @@ do
     ns.HandleSlash("fotos")
     for _ = 1, 6 do RunTimers() end
     local list = RoadbookDB.shots and RoadbookDB.shots.list or {}
-    check(shots == 7 and #list == 7, "Fototour: sieben Screenshots mit Zuschnitt, sind " .. shots .. "/" .. #list)
+    check(shots == 8 and #list == 8, "Fototour: acht Screenshots mit Zuschnitt, sind " .. shots .. "/" .. #list)
     local names = {}
     for _, r in ipairs(list) do names[#names + 1] = r.name end
-    check(joined(names) == "plans ; tracker ; route ; notes ; macros ; options ; import", "Reihenfolge der Bilder: " .. joined(names))
+    check(joined(names) == "plans ; tracker ; route ; notes ; macros ; search ; options ; import", "Reihenfolge der Bilder: " .. joined(names))
     check(seenPlans == "Abgaberunde (automatisch) ; Abgaben im Steinkrallengebirge ; Meine Punkte", "Nur Beispielpläne im Bild: " .. tostring(seenPlans))
     check(seenTravel == "Anleger – Zeppelin Orgrimmar – Undercity", "Zeppelin als Reise-Zeile: " .. tostring(seenTravel))
     check(seenMacros == "Roadbook ; Reise", "Nur Beispiel-Makros: " .. tostring(seenMacros))
     check(seenNotes and seenNotes:find("Einkaufsliste", 1, true) and not seenNotes:find("Fluffy", 1, true), "Nur Beispiel-Notizen: " .. tostring(seenNotes))
     check(ns.staging == nil and #ns.GetPlans() == plansBefore and ns.C.activePlan == activeBefore and ns.C.selectedPlan == selBefore
           and ns.travel == travelBefore and joined(TT_List()) == wpBefore, "Nach der Fototour ist alles wie vorher")
-    check(joined(LOG):find("7 Screenshots liegen im Ordner", 1, true), "Abschlussmeldung")
+    check(joined(LOG):find("8 Screenshots liegen im Ordner", 1, true), "Abschlussmeldung")
     Screenshot = nil
 end
 

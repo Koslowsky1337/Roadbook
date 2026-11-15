@@ -112,7 +112,7 @@ do
     ns.PhotoTour()
     for _ = 1, 6 do RunTimers() end
     Screenshot = nil
-    if n ~= 7 then found[#found + 1] = "Fototour: " .. n .. " statt 7 Bilder" end
+    if n ~= 8 then found[#found + 1] = "Fototour: " .. n .. " statt 8 Bilder" end
 end
 
 for _, f in ipairs(found) do print("FEHLER: " .. f) end

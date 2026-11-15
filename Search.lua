@@ -160,6 +160,7 @@ local SHORTLIST = 12        -- so viele nächste Kandidaten bekommen die genaue 
 -- query = { cat = <Kategorie> } oder { text = "Namensteil" }.
 -- Liefert die nächsten NPCs nach Reisezeit, oder nil und eine Meldung.
 function ns.FindNpcs(query, limit)
+    if ns.staging then return ns.staging.npcs end   -- Fototour: Beispieltreffer
     if not hasDB() then return nil, L["QuestieDB is missing – the NPC search needs it."] end
     local here = ns.PlayerPos()
     if not here then return nil, L["Your position is not available here (e.g. in instances)."] end
@@ -342,6 +343,15 @@ function ns.Build_search(panel, tab)
     local bAdd = ns.CreateButton(right, L["Add to plan"], 140, function() ns.AddNpcStep(selected) end)
     bAdd:SetPoint("LEFT", bGo, "RIGHT", 4, 0)
     ns.SetTooltip(bAdd, L["Add to plan"], L["Adds this NPC as a step to the loaded plan, otherwise to the selected plan of your own or to a new one."])
+
+    -- Fototour: eine Kategorie mit Treffern zeigen
+    tab.demo = function()
+        for _, c in ipairs(ns.NpcCategories()) do
+            if c.key == "vendor" then selCat = c end
+        end
+        edit:SetText("")
+        run({ cat = selCat })
+    end
 
     tab.update = function()
         ns.BuildNpcIndex()

@@ -320,6 +320,12 @@ local function demoData()
         (L["Estimated total: %s · flight points: %d known, %d of them found on this continent · speed %.1f yards/s"]):format(ns.FmtTime(735), 12, 3, 7),
         L["Estimate: straight line × 1.3 on foot, flights from known flight points, +45 s per zone change."],
     }, "\n")
+    local function npc(name, zone, x, y, cost) return { id = 0, name = name, sub = L["Vendor"], map = 1454, zone = zone, x = x, y = y, cost = cost } end
+    staging.npcs = {
+        npc("Trak'gen", "Orgrimmar", 53.4, 68.2, 40), npc("Olvia", "Orgrimmar", 45.1, 64.0, 75),
+        npc("Shimra", "Orgrimmar", 48.6, 80.3, 110), npc("Jark", "Durotar", 51.2, 42.6, 260),
+        npc("Uhgar", "Durotar", 55.9, 73.4, 430), npc("Wuark", "Durotar", 51.1, 29.1, 560),
+    }
     return staging
 end
 
@@ -364,6 +370,7 @@ function ns.PhotoTour()
             return ns.frame, TABS
         end },
         { "macros", function() ns.ShowFrame("macros"); return ns.frame, TABS end },
+        { "search", function() ns.ShowFrame("search"); ns.tabs.search.demo(); return ns.frame, TABS end },
         { "options", function() ns.ShowFrame("options"); return ns.frame, TABS end },
         { "import", function()
             ns.frame:Hide()
