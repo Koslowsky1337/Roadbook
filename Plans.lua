@@ -1337,7 +1337,27 @@ ns.FmtTime = fmtTime
 -- Damit der Pfeil nicht hin und her springt, bleibt ein gewählter Weg, bis
 -- ein anderer klar besser ist (mind. 20 s bzw. 10 %).
 ---------------------------------------------------------------------------
-local MIN_SAVING = 30       -- Flug muss mindestens so viel sparen …
+-- Zahlen-Einstellungen (Reiter Optionen): { Standard, kleinster, größter Wert, Schritt }
+ns.OPTS = {
+    flySaving = { 30, 0, 300, 15 },     -- Sekunden, die ein Flug mindestens sparen muss …
+    searchHits = { 8, 4, 20, 2 },       -- Treffer in der NPC-Suche
+    trashMinutes = { 10, 5, 60, 5 },    -- so lange bleibt Gelöschtes im Papierkorb
+}
+
+function ns.Opt(key)
+    local o = ns.OPTS[key]
+    local v = tonumber(ns.DB and type(ns.DB.opt) == "table" and ns.DB.opt[key])
+    return v and math.max(o[2], math.min(o[3], v)) or o[1]
+end
+
+function ns.SetOpt(key, value)
+    local o = ns.OPTS[key]
+    ns.DB.opt = type(ns.DB.opt) == "table" and ns.DB.opt or {}
+    ns.DB.opt[key] = math.max(o[2], math.min(o[3], math.floor((tonumber(value) or o[1]) + 0.5)))
+    ns.Log("I", "options", "%s = %d", key, ns.DB.opt[key])
+    ns.Refresh()
+end
+
 local MIN_SAVING_SHARE = 0.2 -- … und mindestens diesen Anteil der Laufzeit (die Schätzung ist grob)
 local KEEP_MARGIN = 20      -- Sekunden Vorsprung, bevor der Weg wechselt
 
@@ -1464,7 +1484,7 @@ function ns.ComputeTravel(step)
     if not best then return nil end
     local walk = (from.c == to.c) and (walkTime(from, to) + ((from.map ~= to.map) and ZONE_CHANGE or 0)) or nil
     -- Flug nur empfehlen, wenn er sich wirklich lohnt
-    if hop and walk and walk - best < math.max(MIN_SAVING, walk * MIN_SAVING_SHARE) then hop, best = nil, walk end
+    if hop and walk and walk - best < math.max(ns.Opt("flySaving"), walk * MIN_SAVING_SHARE) then hop, best = nil, walk end
     -- Zu Fuß unterwegs: liegt ein unbekannter Flugmeister fast am Weg?
     if not hop and walk then
         local node, extra = pickupNode(from, to)
@@ -1549,7 +1569,9 @@ function ns.CheckNewTaxi()
             if d < NEW_TAXI_RANGE then
                 taxiHinted[key] = true
                 ns.newTaxi = n
-                ns.Print((L["Undiscovered flight master nearby: |cffffffff%s|r (%d yd). |cffffffff/rb fm|r sets a waypoint."]):format(n.name, d))
+                if not ns.DB.quietTaxi then   -- Reiter Optionen; /rb fm geht trotzdem
+                    ns.Print((L["Undiscovered flight master nearby: |cffffffff%s|r (%d yd). |cffffffff/rb fm|r sets a waypoint."]):format(n.name, d))
+                end
                 ns.Log("I", "route", "Undiscovered flight master nearby: %s (%d yd)", n.name, d)
             end
         end

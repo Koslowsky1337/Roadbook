@@ -198,7 +198,7 @@ end
 
 local MAX_TEXT_HITS = 300   -- Namenssuche: so viele NPCs werden höchstens auf Fundorte geprüft
 local SHORTLIST = 12        -- so viele nächste Kandidaten bekommen die genaue Reisezeit
-local PLACE_LIST = 20       -- mit Gebiet: so viele Treffer werden gelistet
+local PLACE_LIST = 20       -- mit Gebiet: mindestens so viele Treffer werden gelistet
 
 -- query = { cat = <Kategorie> } oder { text = "Teil von Name oder Titel" }, dazu
 -- wahlweise place = "Teil des Gebietsnamens" (dann nur Treffer dort, längere Liste).
@@ -239,7 +239,8 @@ function ns.FindNpcs(query, limit)
     table.sort(cands, function(a, b) return a.d < b.d end)
 
     local out = {}
-    for i = 1, math.min(place and PLACE_LIST or SHORTLIST, #cands) do
+    local want = limit or math.max(ns.Opt("searchHits"), place and PLACE_LIST or 0)
+    for i = 1, math.min(math.max(SHORTLIST, want + 4), #cands) do
         local c = cands[i]
         local info = C_Map.GetMapInfo and C_Map.GetMapInfo(c.spot.map)
         local sub = NpcDB.Get(c.id, "subName")
@@ -250,7 +251,7 @@ function ns.FindNpcs(query, limit)
         }
     end
     table.sort(out, function(a, b) return a.cost < b.cost end)
-    for i = #out, (limit or (place and PLACE_LIST or 8)) + 1, -1 do out[i] = nil end
+    for i = #out, want + 1, -1 do out[i] = nil end
     ns.Log("I", "search", "NPC search %s%s: %d hits, %d with a position, %.0f ms",
         text and ("\"" .. text .. "\"") or query.cat.key, place and (" in \"" .. place .. "\"") or "", hits, #cands, (debugprofilestop and debugprofilestop() or 0) - t0)
     if #out == 0 then return nil, L["Nothing found."] end

@@ -143,7 +143,7 @@ end
 -- Notizen/Pläne aus der Post lassen sich nicht wirklich löschen (sie kommen aus Post.lua),
 -- sondern werden ausgeblendet. Bringt die Post eine geänderte Fassung, erscheinen sie wieder.
 ---------------------------------------------------------------------------
-ns.TRASH_SECONDS = 10 * 60
+function ns.TrashSeconds() return ns.Opt("trashMinutes") * 60 end
 
 function ns.PostNoteHash(n) return ns.Hash((n.title or "") .. "\n" .. (n.body or "")) end
 function ns.PostPlanHash(p)
@@ -162,7 +162,7 @@ function ns.IsPostPlanHidden(p)
 end
 
 local function remaining(entry)
-    return (entry.deletedAt or 0) + ns.TRASH_SECONDS - time()
+    return (entry.deletedAt or 0) + ns.TrashSeconds() - time()
 end
 
 function ns.PurgeTrash()
@@ -197,7 +197,7 @@ function ns.ToTrash(entry)
     table.insert(ns.C.trash, entry)
     if not quiet then
         ns.Print((L["%s “%s” deleted – %d min in the trash (|cffffffff/rb trash|r)."]):format(
-            KIND_LABEL[entry.kind] or L["Entry"], entry.title or "?", ns.TRASH_SECONDS / 60))
+            KIND_LABEL[entry.kind] or L["Entry"], entry.title or "?", ns.TrashSeconds() / 60))
     end
     ns.Log("I", "trash", "%s in the trash: %s", KIND_LABEL[entry.kind] or entry.kind, tostring(entry.title))
 end

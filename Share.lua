@@ -185,71 +185,88 @@ function ns.Build_options(panel, tab)
     head:SetPoint("TOPLEFT", 4, 0)
     head:SetText(L["Options"])
 
-    local y = -26
-    local function check(text, tip, get, set)
+    local RIGHT_X = 340   -- zweite Spalte
+    local checks, steppers = {}, {}
+    local function check(x, y, text, tip, get, set)
         local cb = ns.AutoWrap(CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate"), "option")
         cb:SetSize(24, 24)
-        cb:SetPoint("TOPLEFT", 2, y)
+        cb:SetPoint("TOPLEFT", x, y)
         local label = ns.FontString(panel, "GameFontHighlight")
         label:SetPoint("LEFT", cb, "RIGHT", 4, 0)
         label:SetText(text)
         cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false); ns.UpdateUI() end)
         ns.SetTooltip(cb, text, tip)
         cb.get = get
-        y = y - 28
-        return cb
+        checks[#checks + 1] = cb
+    end
+    -- Minus, Wert, Plus. „text“ liefert die Zeile, „get/set“ den Wert in Schritten zwischen lo und hi.
+    local function stepper(x, y, text, get, set, step, lo, hi)
+        local minus = ns.CreateButton(panel, "-", 28, function() set(get() - step) end)
+        minus:SetPoint("TOPLEFT", x, y)
+        local value = ns.FontString(panel, "GameFontHighlight", "CENTER")
+        value:SetPoint("LEFT", minus, "RIGHT", 6, 0)
+        value:SetWidth(240)
+        local plus = ns.CreateButton(panel, "+", 28, function() set(get() + step) end)
+        plus:SetPoint("LEFT", value, "RIGHT", 6, 0)
+        steppers[#steppers + 1] = function()
+            value:SetText(text())
+            minus:SetEnabled(get() > lo)
+            plus:SetEnabled(get() < hi)
+        end
+    end
+    local function optStepper(x, y, key, text)
+        local o = ns.OPTS[key]
+        stepper(x, y, function() return text(ns.Opt(key)) end,
+            function() return ns.Opt(key) end, function(v) ns.SetOpt(key, v) end, o[4], o[2], o[3])
+    end
+    local function title(x, y, text)
+        local t = ns.FontString(panel, "GameFontNormal")
+        t:SetPoint("TOPLEFT", x, y)
+        t:SetText(text)
     end
 
-    local checks = {
-        check(L["Show the step tracker"], L["The small window below the minimap with your next step. Also: /rb tracker"],
-            function() return not (ns.DB.tracker and ns.DB.tracker.hidden) end,
-            function(v) ns.DB.tracker = ns.DB.tracker or {}; ns.DB.tracker.hidden = not v end),
-        check(L["Show the minimap button"], L["Also: /rb minimap. The addon menu at the minimap always has a Roadbook entry."],
-            function() return not ns.DB.minimap.hidden end,
-            function(v) ns.DB.minimap.hidden = not v; ns.UpdateMinimapButton() end),
-        check(L["Detailed log"], L["Writes more into the log and shows warnings in chat. Useful for bug reports. Also: /rb debug"],
-            function() return ns.DB.debug and true or false end,
-            function(v) ns.DB.debug = v end),
-    }
+    -- linke Spalte: Allgemeines
+    check(2, -26, L["Show the step tracker"], L["The small window below the minimap with your next step. Also: /rb tracker"],
+        function() return not (ns.DB.tracker and ns.DB.tracker.hidden) end,
+        function(v) ns.DB.tracker = ns.DB.tracker or {}; ns.DB.tracker.hidden = not v end)
+    check(2, -54, L["Show the minimap button"], L["Also: /rb minimap. The addon menu at the minimap always has a Roadbook entry."],
+        function() return not ns.DB.minimap.hidden end,
+        function(v) ns.DB.minimap.hidden = not v; ns.UpdateMinimapButton() end)
+    check(2, -82, L["Detailed log"], L["Writes more into the log and shows warnings in chat. Useful for bug reports. Also: /rb debug"],
+        function() return ns.DB.debug and true or false end,
+        function(v) ns.DB.debug = v end)
+    optStepper(4, -114, "trashMinutes", function(v) return (L["Trash keeps items for: %d min"]):format(v) end)
 
-    y = y - 12
-    local title = ns.FontString(panel, "GameFontNormal")
-    title:SetPoint("TOPLEFT", 4, y)
-    title:SetText(L["Undiscovered flight masters"])
-    y = y - 20
-    local info = ns.FontString(panel, "GameFontHighlightSmall")
-    info:SetPoint("TOPLEFT", 4, y)
-    info:SetPoint("RIGHT", -4, 0)
-    info:SetJustifyV("TOP")
-    info:SetText(L["If an undiscovered flight master is almost on your way, Roadbook adds it as a stop. Knowing it saves time later. Set how much detour that is worth to you."])
-    y = y - 34
-    local minus = ns.CreateButton(panel, "-", 28, function() ns.SetPickupMax(ns.PickupMax() - ns.PICKUP_STEP) end)
-    minus:SetPoint("TOPLEFT", 4, y)
-    local value = ns.FontString(panel, "GameFontHighlight", "CENTER")
-    value:SetPoint("LEFT", minus, "RIGHT", 6, 0)
-    value:SetWidth(210)
-    local plus = ns.CreateButton(panel, "+", 28, function() ns.SetPickupMax(ns.PickupMax() + ns.PICKUP_STEP) end)
-    plus:SetPoint("LEFT", value, "RIGHT", 6, 0)
-
-    y = y - 40
-    local sTitle = ns.FontString(panel, "GameFontNormal")
-    sTitle:SetPoint("TOPLEFT", 4, y)
-    sTitle:SetText(L["NPC search"])
-    y = y - 18
-    checks[#checks + 1] = check(L["Categories also list the other faction"],
+    -- rechte Spalte: NPC-Suche
+    title(RIGHT_X + 2, -8, L["NPC search"])
+    check(RIGHT_X, -26, L["Categories also list the other faction"],
         L["Unticked, the categories only list NPCs of your own faction. The text search always finds everything and marks what does not fit your character."],
         function() return ns.SearchOpt().otherFaction and true or false end,
         function(v) ns.SearchOpt().otherFaction = v end)
-    checks[#checks + 1] = check(L["Class trainer lists all classes"],
+    check(RIGHT_X, -54, L["Class trainer lists all classes"],
         L["Unticked, the category Class trainer only lists the trainers of your own class."],
         function() return ns.SearchOpt().allClasses and true or false end,
         function(v) ns.SearchOpt().allClasses = v end)
+    optStepper(RIGHT_X + 2, -114, "searchHits", function(v) return (L["Search results: %d"]):format(v) end)
+
+    -- unten über die ganze Breite: Flüge
+    title(4, -156, L["Flights"])
+    check(2, -174, L["Announce undiscovered flight masters in chat"],
+        L["Roadbook tells you once in chat when an undiscovered flight master is nearby. /rb fm sets the waypoint either way."],
+        function() return not ns.DB.quietTaxi end,
+        function(v) ns.DB.quietTaxi = not v or nil end)
+    local info = ns.FontString(panel, "GameFontHighlightSmall")
+    info:SetPoint("TOPLEFT", 4, -206)
+    info:SetPoint("RIGHT", -4, 0)
+    info:SetJustifyV("TOP")
+    info:SetText(L["If an undiscovered flight master is almost on your way, Roadbook adds it as a stop. Knowing it saves time later. Set how much detour that is worth to you."])
+    stepper(4, -240, function() return (L["Detour up to: %s"]):format(ns.PickupText()) end,
+        ns.PickupMax, ns.SetPickupMax, ns.PICKUP_STEP, 0, ns.PICKUP_LIMIT)
+    optStepper(RIGHT_X + 2, -240, "flySaving", function(v) return (L["A flight must save at least: %d s"]):format(v) end)
 
     tab.update = function()
         for _, cb in ipairs(checks) do cb:SetChecked(cb.get()) end
-        value:SetText((L["Detour up to: %s"]):format(ns.PickupText()))
-        minus:SetEnabled(ns.PickupMax() > 0)
-        plus:SetEnabled(ns.PickupMax() < ns.PICKUP_LIMIT)
+        for _, update in ipairs(steppers) do update() end
     end
 end
 

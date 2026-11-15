@@ -68,6 +68,9 @@ scan("Optionen, Umweg aus")
 ns.SetPickupMax(600); ns.UpdateUI()
 scan("Optionen, Umweg 10 Min.")
 ns.SetPickupMax(120)
+ns.SetOpt("flySaving", 300); ns.SetOpt("trashMinutes", 60); ns.SetOpt("searchHits", 20); ns.UpdateUI()
+scan("Optionen, alles am oberen Ende")
+ns.SetOpt("flySaving", 30); ns.SetOpt("trashMinutes", 10); ns.SetOpt("searchHits", 8)
 
 -- Reiter NPC-Suche: leer, jede Kategorie, Namenssuche ohne Treffer
 ns.ShowFrame("search")

@@ -967,6 +967,17 @@ check(#ns.FindNpcs({ cat = cat("class") }) == 2, "Option: Klassenlehrer zeigt al
 ns.SearchOpt().allClasses = nil
 ns.HandleSlash("suche händler in mulgore")
 check(joined(TT_List()):find("Mulgore-Händler|Roadbook search", 1, true), "/rb suche <Kategorie> in <Gebiet>")
+-- Einstellungen: Trefferzahl, Papierkorb-Dauer, Grenzen
+ns.SetOpt("searchHits", 4)
+check(#ns.FindNpcs({ text = "nd" }) <= 4 and ns.Opt("searchHits") == 4, "Trefferzahl der Suche ist einstellbar")
+ns.SetOpt("searchHits", 99)
+check(ns.Opt("searchHits") == 20, "Einstellungen bleiben in ihren Grenzen")
+ns.SetOpt("searchHits", 8)
+check(ns.TrashSeconds() == 600, "Papierkorb: Standard 10 Minuten")
+ns.SetOpt("trashMinutes", 30)
+check(ns.TrashSeconds() == 1800, "Papierkorb-Dauer ist einstellbar")
+ns.SetOpt("trashMinutes", 10)
+check(ns.Opt("flySaving") == 30, "Flug-Ersparnis: Standard 30 s")
 ns.GoToNpc(vend[1])
 check(joined(TT_List()):find("Naher Händler|Roadbook search", 1, true), "Weg zeigen setzt einen TomTom-Punkt: " .. joined(TT_List()))
 ns.GoToNpc(vend[2])

@@ -186,7 +186,7 @@ function ns.ShowTrash()
         title:SetText(L["Trash"])
         local hint = ns.FontString(f, "GameFontDisableSmall", "CENTER")
         hint:SetPoint("BOTTOM", 0, 18)
-        hint:SetText((L["Deleted items stay here for %d minutes, then they are gone for good."]):format(ns.TRASH_SECONDS / 60))
+        hint:SetText((L["Deleted items stay here for %d minutes, then they are gone for good."]):format(ns.TrashSeconds() / 60))
         local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         close:SetPoint("TOPRIGHT", -6, -6)
 
