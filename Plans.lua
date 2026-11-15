@@ -296,7 +296,7 @@ function ns.ToggleTravelSkip(stepKey)
     else
         local tr = ns.travel
         if not (tr and tr.stepKey == stepKey) then return false end
-        local title = ns.StepTitle(tr.waypoint)
+        local title = tr.waypoint and ns.StepTitle(tr.waypoint) or tr.text
         ns.wp.suppressed[key] = true
         ns.wp.skippedTravel = { stepKey = stepKey, title = title }
         ns.Print((L["Travel leg skipped: %s. The arrow now points straight to the step."]):format(title))
@@ -1342,6 +1342,8 @@ ns.OPTS = {
     flySaving = { 30, 0, 300, 15 },     -- Sekunden, die ein Flug mindestens sparen muss …
     searchHits = { 8, 4, 20, 2 },       -- Treffer in der NPC-Suche
     trashMinutes = { 10, 5, 60, 5 },    -- so lange bleibt Gelöschtes im Papierkorb
+    hearthSaving = { 15, 5, 60, 5 },    -- Minuten, die der Ruhestein mindestens sparen muss
+    groupSaving = { 10, 5, 60, 5 },     -- Minuten, ab denen ein Portal/eine Beschwörung empfohlen wird
 }
 
 function ns.Opt(key)
@@ -1380,7 +1382,139 @@ local function nodeMapPos(node)
     return w
 end
 
+---------------------------------------------------------------------------
+-- Sprünge: eigene Teleports (Magier) und der Ruhestein als Reiseweg. Dazu als
+-- Empfehlung: Portale von Magiern in der Gruppe (sie teilen ihre Portale über
+-- Roadbook, siehe Share.lua) und Beschwörungen von Hexenmeistern in der Gruppe.
+-- Alles einzeln abschaltbar im Reiter Optionen.
+-- shortcut: Sprünge zählen nur für den Weg ab deinem Standort, nicht beim Sortieren
+-- eines Plans (ns.LegCost); aufrüsten, wenn Magier-Routen dadurch spürbar schlechter sind.
+---------------------------------------------------------------------------
+local JUMP_TIME = 25      -- Zauberzeit 10 s + Ladebildschirm
+local PORTAL_TIME = 60    -- fragen, zaubern, durchgehen
+local SUMMON_TIME = 120   -- fragen, Helfer finden, Ritual
+local ARRIVED = 300       -- Yards: so nah am Ankunftsort ist der Sprung erledigt
+local RUNE_TELEPORT, HEARTHSTONE, HEARTH_SPELL = 17031, 6948, 8690
+-- { Teleport, Portal, Karte, x, y, Fraktion }; Ankunft beim Portallehrer der Stadt (QuestieDB)
+ns.CITY_SPELLS = {
+    { 3567, 11417, 1454, 38.7, 85.4, "Horde" },     -- Orgrimmar
+    { 3563, 11418, 1458, 84.2, 15.6, "Horde" },     -- Undercity
+    { 3566, 11420, 1456, 22.5, 16.9, "Horde" },     -- Thunder Bluff
+    { 3561, 10059, 1453, 50.4, 86.0, "Alliance" },  -- Stormwind
+    { 3562, 11416, 1455, 25.5, 7.1, "Alliance" },   -- Ironforge
+    { 3565, 11419, 1457, 40.6, 82.1, "Alliance" },  -- Darnassus
+}
+
+function ns.KnowsSpell(spell)
+    if C_SpellBook and C_SpellBook.IsSpellKnown then
+        local ok, known = pcall(C_SpellBook.IsSpellKnown, spell)
+        if ok and known then return true end
+    end
+    return (IsPlayerSpell and IsPlayerSpell(spell)) or (IsSpellKnown and IsSpellKnown(spell)) or false
+end
+
+local function spellName(spell)
+    local n = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(spell)
+    return n or (GetSpellInfo and (GetSpellInfo(spell))) or nil
+end
+
+local function hearthReady()
+    if ns.ItemCount(HEARTHSTONE) < 1 then return false end
+    local get = (C_Container and C_Container.GetItemCooldown) or GetItemCooldown
+    if not get then return true end
+    local ok, start, dur = pcall(get, HEARTHSTONE)
+    start, dur = num(start), num(dur)
+    return not (ok and start and dur and dur > 0 and start + dur - GetTime() > 0)
+end
+
+-- Wo der Ruhestein hinführt, sagt das Spiel nur als Namen. Den Ort merkt sich Roadbook,
+-- wenn du ihn beim Gastwirt setzt oder den Stein benutzt (afterUse: nur kurz nach dem Zauber).
+function ns.RecordHearth(afterUse)
+    if afterUse and not (ns.hearthUsedAt and GetTime() - ns.hearthUsedAt < 120) then return end
+    local here, name = ns.PlayerPos(), GetBindLocation and GetBindLocation()
+    if not (here and name) then return end
+    ns.hearthUsedAt = nil
+    ns.C.hearth = { name = name, c = here.c, x = here.x, y = here.y, map = here.map }
+    ns.Log("I", "route", "Hearthstone location remembered: %s", name)
+end
+
+function ns.OnSpellCast(spell)
+    if num(spell) ~= HEARTH_SPELL then return end
+    ns.hearthUsedAt = GetTime()
+    C_Timer.After(3, function() ns.RecordHearth(true) end)
+end
+
+local function groupUnits()
+    local out = {}
+    if IsInRaid and IsInRaid() then
+        for i = 1, 40 do out[i] = "raid" .. i end
+    elseif IsInGroup and IsInGroup() then
+        for i = 1, 4 do out[i] = "party" .. i end
+    end
+    return out
+end
+
+local function unitPos(unit)
+    if not (C_Map and C_Map.GetBestMapForUnit and C_Map.GetPlayerMapPosition) then return nil end
+    local ok, map = pcall(C_Map.GetBestMapForUnit, unit)
+    map = ok and num(map) or nil
+    if not map then return nil end
+    local ok2, p = pcall(C_Map.GetPlayerMapPosition, map, unit)
+    local x, y = vecXY(ok2 and p)
+    if not (x and y) then return nil end
+    return ns.WorldPos(map, x * 100, y * 100, true)
+end
+
+-- Jeder Sprung: { kind, sig, name, who, pos = Ankunft, lead = Sekunden bis dort, min = Mindestersparnis }
+local function jumps(from)
+    local out = {}
+    if not ns.DB.noTeleport and ns.ItemCount(RUNE_TELEPORT) > 0 then
+        for _, s in ipairs(ns.CITY_SPELLS) do
+            local pos = ns.KnowsSpell(s[1]) and ns.WorldPos(s[3], s[4], s[5])
+            if pos then
+                out[#out + 1] = { kind = "sprung", sig = "sprung:" .. s[1], name = spellName(s[1]) or placeName(s[3]),
+                                  pos = pos, lead = JUMP_TIME, min = ns.Opt("flySaving") }
+            end
+        end
+    end
+    local h = ns.C.hearth
+    if not ns.DB.noHearth and type(h) == "table" and h.name == (GetBindLocation and GetBindLocation()) and hearthReady() then
+        out[#out + 1] = { kind = "sprung", sig = "sprung:hearth", name = (L["Hearthstone (%s)"]):format(h.name),
+                          pos = { c = h.c, x = h.x, y = h.y, map = h.map }, lead = JUMP_TIME, min = ns.Opt("hearthSaving") * 60 }
+    end
+    local wantPortal, wantSummon = not ns.DB.noPortalHint, not ns.DB.noSummonHint
+    if not (wantPortal or wantSummon) then return out end
+    local min = ns.Opt("groupSaving") * 60
+    for _, unit in ipairs(groupUnits()) do
+        local name = UnitName(unit)
+        local _, class = UnitClass(unit)
+        if name and not (UnitIsUnit and UnitIsUnit(unit, "player")) and not (UnitIsConnected and not UnitIsConnected(unit)) then
+            local known = wantPortal and ns.portals and ns.portals[name]
+            local pos = (known or class == "WARLOCK") and unitPos(unit)
+            if known and pos and pos.c == from.c then
+                for _, s in ipairs(ns.CITY_SPELLS) do
+                    local dest = known[s[2]] and ns.WorldPos(s[3], s[4], s[5])
+                    if dest then
+                        out[#out + 1] = { kind = "portal", sig = ("portal:%s:%d"):format(name, s[2]), who = name, name = placeName(s[3]),
+                                          pos = dest, lead = walkTime(from, pos) + PORTAL_TIME, min = min }
+                    end
+                end
+            end
+            if wantSummon and class == "WARLOCK" and pos and (num(UnitLevel and UnitLevel(unit)) or 0) >= 20 then
+                out[#out + 1] = { kind = "ruf", sig = "ruf:" .. name, who = name, pos = pos, lead = SUMMON_TIME, min = min }
+            end
+        end
+    end
+    return out
+end
+
+local function jumpCost(from, to, j)
+    if j.pos.c == from.c and dist(from, j.pos) < ARRIVED then return nil end
+    return j.lead + (ns.LegCost(j.pos, to) or NO_LINK)
+end
+
 local function hopSig(hop)
+    if hop.sig then return hop.sig end
     if hop.kind == "flug" then
         return ("flug:%s>%s"):format(tostring(hop.from.id or hop.from.name), tostring(hop.to.id or hop.to.name))
     end
@@ -1405,6 +1539,12 @@ end
 
 -- Was kostet es, dem gewählten Abschnitt von hier aus weiter zu folgen?
 local function hopCost(from, to, hop)
+    if hop.sig then   -- Sprung: gibt es ihn noch (Rune, Abklingzeit, Gruppe)?
+        for _, j in ipairs(jumps(from)) do
+            if j.sig == hop.sig then return jumpCost(from, to, j) or math.huge end
+        end
+        return math.huge
+    end
     local start = (hop.kind == "flug" and hop.from) or (hop.kind == "neu" and hop.node) or hop.dock
     if not start or start.c ~= from.c then return math.huge end
     if hop.kind == "neu" then return walkTime(from, hop.node) + (ns.LegCost(hop.node, to) or NO_LINK) end
@@ -1417,7 +1557,14 @@ end
 local function travelInfo(step, hop, cost, saves)
     local tr = { stepKey = step.key, stepTitle = ns.StepTitle(step), hop = hop, sig = hopSig(hop), cost = cost }
     local spare = (saves and saves >= 60) and (L[" – saves about %s"]):format(fmtTime(saves)) or ""
-    if hop.kind == "flug" then
+    -- Sprünge haben keinen Wegpunkt: der Pfeil bleibt auf dem Ziel, der Tracker nennt den Sprung
+    if hop.kind == "sprung" then
+        tr.text = (L["First use |cffffffff%s|r%s"]):format(hop.name, spare)
+    elseif hop.kind == "portal" then
+        tr.text = (L["Tip: ask %s for a portal to %s%s"]):format(hop.who, hop.name, spare)
+    elseif hop.kind == "ruf" then
+        tr.text = (L["Tip: ask %s for a summon%s"]):format(hop.who, spare)
+    elseif hop.kind == "flug" then
         local w = nodeMapPos(hop.from)
         if not w then return nil end
         local dest = hop.to.short .. (hop.after and (L[", then "] .. hop.after) or "")
@@ -1490,6 +1637,13 @@ function ns.ComputeTravel(step)
         local node, extra = pickupNode(from, to)
         if node then hop, best = { kind = "neu", node = node, extra = extra }, walk + extra end
     end
+    -- Teleport, Ruhestein, Portal oder Beschwörung: nur, wenn es die Mindestersparnis bringt
+    local saves = walk and (walk - best) or nil
+    local base = best
+    for _, j in ipairs(jumps(from)) do
+        local t = jumpCost(from, to, j)
+        if t and base - t >= j.min and t < best then hop, best, saves = j, t, base - t end
+    end
     -- Gewählten Weg behalten, solange der neue nicht klar besser ist
     if cur and cur.hop.kind ~= "neu" and (not hop or hopSig(hop) ~= cur.sig) then
         local keep = hopCost(from, to, cur.hop)
@@ -1498,7 +1652,7 @@ function ns.ComputeTravel(step)
         end
     end
     if not hop then return nil end
-    return travelInfo(step, hop, best, walk and (walk - best) or nil)
+    return travelInfo(step, hop, best, saves)
 end
 
 -- An Bord erkannt: du wirst bewegt, läufst aber nicht selbst. Dann ist der Anleger

@@ -1050,4 +1050,103 @@ check(not ns.versionNotified and ns.DB.newerVersion == nil, "Nach drei Tagen ohn
 ns.VERSION, GetTime, IN_GUILD = realVersion, realGetTime, false
 check(#ERRORS_FORWARDED == errBase8, "Keine Lua-Fehler im Versionshinweis: " .. joined(ERRORS_FORWARDED))
 
+-- Teleports, Ruhestein, Portale der Gruppe, Beschwörung
+local errBase9 = #ERRORS_FORWARDED
+local function kind() return ns.travel and ns.travel.hop.kind or "-" end
+local function reroute() ns.travel = nil; ns.ResetWaypoints(true); RunTimers() end
+ns.DeactivatePlan(); RunTimers()
+MAPOFF[1454] = { 30000, 30000, 100, 1 }   -- Orgrimmar, weit weg auf demselben Kontinent
+ns.ClearRouteCache()
+PLAYER = { map = 1413, x = 0.576, y = 0.213 }
+ns.C.plans["p900"] = { id = "p900", title = "Fern", mode = "route", created = 9, steps = {
+    { type = "goto", map = 1454, x = 60, y = 60, title = "In Orgrimmar" } } }
+ns.ActivatePlan("e:p900"); RunTimers()
+check(kind() ~= "sprung", "Ohne Teleport kein Sprung")
+PLAYER_CLASS, SPELLS_KNOWN = "MAGE", { [3567] = true, [11417] = true }
+reroute()
+check(kind() ~= "sprung", "Teleport ohne Rune wird nicht empfohlen")
+ITEMS[17031] = 2
+reroute()
+check(kind() == "sprung" and ns.travel.text:find("Teleportieren: Orgrimmar", 1, true) and TomTom.arrow.title == "In Orgrimmar",
+      "Magier mit Rune: Teleport empfohlen, Pfeil bleibt auf dem Ziel: " .. tostring(ns.travel and ns.travel.text))
+ns.SkipCurrentStep(); RunTimers()
+check(ns.travel == nil and #ERRORS_FORWARDED == errBase9, "Sprung-Empfehlung lässt sich überspringen")
+ns.ToggleTravelSkip(ns.GetPlan("e:p900").steps[1].key); RunTimers()
+ns.DB.noTeleport = true
+reroute()
+check(kind() ~= "sprung", "Eigene Teleports abgeschaltet")
+ns.DB.noTeleport = nil
+PLAYER = { map = 1454, x = 0.4, y = 0.84 }
+reroute()
+check(ns.travel == nil, "Nach dem Teleport: kein zweiter")
+-- Ruhestein: Ort beim Setzen merken
+SPELLS_KNOWN, BIND = {}, "Orgrimmar"
+ns.RecordHearth()
+check(ns.C.hearth and ns.C.hearth.name == "Orgrimmar", "Ruhestein-Ort gemerkt")
+PLAYER = { map = 1413, x = 0.576, y = 0.213 }
+reroute()
+check(kind() ~= "sprung", "Ohne Ruhestein in der Tasche kein Sprung")
+ITEMS[6948] = 1
+reroute()
+check(kind() == "sprung" and ns.travel.sig == "sprung:hearth" and ns.travel.text:find("Ruhestein (Orgrimmar)", 1, true),
+      "Ruhestein empfohlen: " .. tostring(ns.travel and ns.travel.text))
+HEARTH_CD = 3600
+reroute()
+check(kind() ~= "sprung", "Ruhestein mit Abklingzeit wird nicht empfohlen")
+HEARTH_CD, BIND = 0, "Woanders"
+reroute()
+check(kind() ~= "sprung", "Neu gebunden, Ort unbekannt: kein Sprung")
+BIND = "Orgrimmar"
+ns.DB.noHearth = true
+reroute()
+check(kind() ~= "sprung", "Ruhestein abgeschaltet")
+-- Portale teilen
+ADDON_SENT = {}
+SPELLS_KNOWN = { [11417] = true, [11418] = true }
+ns.SharePortals(true)
+check(#ADDON_SENT == 0, "Ohne Gruppe wird nichts geteilt")
+IN_GROUP = true
+ns.SharePortals(); ns.SharePortals()
+check(#ADDON_SENT == 1 and ADDON_SENT[1] == "RoadbookTp|11417,11418|PARTY", "Magier teilt seine Portale einmal: " .. joined(ADDON_SENT))
+ns.SetPortalShare(false)
+check(#ADDON_SENT == 2 and ADDON_SENT[2] == "RoadbookTp|-|PARTY", "Abschalten nimmt die Portale zurück")
+ns.SharePortals(true)
+check(#ADDON_SENT == 2, "Abgeschaltet: nichts mehr teilen")
+ns.DB.noPortalShare = nil
+-- Empfehlung: Magier in der Gruppe
+PLAYER_CLASS, SPELLS_KNOWN = "WARRIOR", {}
+UNITS.party1 = { name = "Magus", class = "MAGE", level = 45, map = 1413, x = 0.58, y = 0.22 }
+reroute()
+check(kind() == "-" or kind() == "flug" or kind() == "neu", "Magier ohne geteilte Portale: keine Empfehlung")
+ns.OnPortalMessage("RoadbookTp", "11417,4711", "PARTY", "Magus-Testrealm")
+ns.OnPortalMessage("RoadbookTp", "11418", "GUILD", "Magus-Testrealm")
+check(ns.portals.Magus and ns.portals.Magus[11417] and not ns.portals.Magus[4711] and not ns.portals.Magus[11418],
+      "Nur echte Portale aus der Gruppe werden angenommen")
+reroute()
+check(kind() == "portal" and ns.travel.hop.who == "Magus" and ns.travel.text:find("Frag Magus nach einem Portal", 1, true),
+      "Portal-Empfehlung: " .. tostring(ns.travel and ns.travel.text))
+ns.DB.noPortalHint = true
+reroute()
+check(kind() ~= "portal", "Portal-Empfehlung abgeschaltet")
+ns.DB.noPortalHint = nil
+ns.OnPortalMessage("RoadbookTp", "-", "PARTY", "Magus-Testrealm")
+reroute()
+check(ns.portals.Magus == nil and kind() ~= "portal", "Zurückgenommene Portale werden vergessen")
+-- Empfehlung: Hexenmeister am Ziel
+UNITS.party2 = { name = "Hexer", class = "WARLOCK", level = 30, map = 1454, x = 0.6, y = 0.62 }
+reroute()
+check(kind() == "ruf" and ns.travel.text:find("Frag Hexer nach einer Beschwörung", 1, true),
+      "Beschwörung empfohlen: " .. tostring(ns.travel and ns.travel.text))
+ns.DB.noSummonHint = true
+reroute()
+check(kind() ~= "ruf", "Beschwörungs-Empfehlung abgeschaltet")
+ns.DB.noSummonHint = nil
+UNITS.party2.level = 10
+reroute()
+check(kind() ~= "ruf", "Hexenmeister unter Stufe 20 kann nicht beschwören")
+UNITS, IN_GROUP, ITEMS[17031], ITEMS[6948], ns.DB.noHearth = {}, false, nil, nil, nil
+ns.C.hearth = nil
+ns.DeactivatePlan(); RunTimers()
+check(#ERRORS_FORWARDED == errBase9, "Keine Lua-Fehler bei Teleports und Portalen: " .. joined(ERRORS_FORWARDED))
+
 print(("Tests: %d ok, %d Fehler, %d Knöpfe geklickt"):format(passes, fails, clicked))

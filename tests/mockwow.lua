@@ -275,7 +275,18 @@ IsInGuild = function() return IN_GUILD end
 IsInGroup = function() return IN_GROUP end
 IsInRaid = function() return false end
 GetNumGroupMembers = function() return IN_GROUP and 2 or 0 end
-GetSubZoneText = function() return "Wegekreuz" end
+-- Gruppenmitglieder: UNITS.party1 = { name, class, level, map, x, y }
+UNITS, PLAYER_CLASS, SPELLS_KNOWN, BIND, HEARTH_CD = {}, "WARRIOR", {}, "Wegekreuz", 0
+UnitName = function(u) if UNITS[u] then return UNITS[u].name end; if u == nil or u == "player" then return "Tester" end end
+UnitClass = function(u) if UNITS[u] then return "?", UNITS[u].class end; return "Klasse", PLAYER_CLASS end
+UnitLevel = function(u) return UNITS[u] and UNITS[u].level or 30 end
+C_Map.GetBestMapForUnit = function(u) return (UNITS[u] or PLAYER).map end
+C_Map.GetPlayerMapPosition = function(_, u) local p = UNITS[u] or PLAYER; return { x = p.x, y = p.y } end
+IsPlayerSpell = function(id) return SPELLS_KNOWN[id] or false end
+C_Spell = { GetSpellName = function(id) return id == 3567 and "Teleportieren: Orgrimmar" or nil end }
+GetBindLocation = function() return BIND end
+GetItemCooldown = function() return HEARTH_CD > 0 and GetTime() or 0, HEARTH_CD end
+GetSubZoneText =function() return "Wegekreuz" end
 GetZoneText = function() return "Brachland" end
 PICKED = {}
 function ClearCursor() end

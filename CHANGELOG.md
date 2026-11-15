@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Mages: your teleports are travel legs now. If a teleport gets you there faster, the tracker says so (needs a Rune of Teleportation).
+- Hearthstone as a travel leg when it is ready and saves at least 15 minutes (adjustable). Roadbook learns where it leads when you set your home or use the stone once.
+- Group: a mage with Roadbook shares their known portals invisibly with the group; the others get the tip to ask for a portal when it saves at least 10 minutes (adjustable). A warlock in the group who is much closer to your destination is suggested for a summon.
+- Options: all four can be switched off separately, including sharing your own portals.
+
 ## 1.2.2
 
 - `/rb shots`: names above characters are hidden during the tour and the search shows sample professions, so the pictures contain nothing of your own.
