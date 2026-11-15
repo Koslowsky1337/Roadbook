@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.2
 
 - `/rb shots`: names above characters are hidden during the tour and the search shows sample professions, so the pictures contain nothing of your own.
 
