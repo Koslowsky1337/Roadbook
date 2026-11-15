@@ -48,6 +48,10 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
 - [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 
+**Versionshinweis (nach 1.2.0, noch ohne Tag)**
+- [ ] Optionen: Haken „Auf neuere Versionen hinweisen“ ist da, der Reiter passt weiterhin ins Fenster.
+- [ ] Kein Fehler beim Login und beim Betreten einer Gruppe. Der Hinweis selbst lässt sich nur mit einem zweiten Spieler prüfen, der eine andere Version hat; die Kopie im Spielordner („dev“) sendet und meldet nichts.
+
 **Zeppeline und Schiffe** (aus den Spieldaten bestätigt: Orgrimmar, Undercity, Grom'gol, Ratchet, Booty Bay)
 - [ ] Ziel auf dem anderen Kontinent: Pfeil zeigt zum Anleger, und der steht an der richtigen Stelle.
 - [ ] Aus Leatrix Maps übernommen, im Spiel noch nicht abgelaufen: Thunder Bluff ↔ Insel Zephras, Tanaris ↔ Flusslande (laut Leatrix nur Horde) und alle Allianz-Linien samt Tiefenbahn und Feralas-Fähre. Wenn du dort vorbeikommst: stimmt der Anleger?

@@ -264,6 +264,14 @@ LibQuestieDB = { Support = { Get = function(n)
                                                areaIdToUiMapIdOverride = "return { }" } } end
 end } }
 
+ADDON_SENT = {}
+C_ChatInfo = { RegisterAddonMessagePrefix = function() return true end,
+               SendAddonMessage = function(prefix, text, channel) ADDON_SENT[#ADDON_SENT + 1] = prefix .. "|" .. text .. "|" .. channel end }
+IN_GUILD, IN_GROUP = false, false
+IsInGuild = function() return IN_GUILD end
+IsInGroup = function() return IN_GROUP end
+IsInRaid = function() return false end
+GetNumGroupMembers = function() return IN_GROUP and 2 or 0 end
 GetSubZoneText = function() return "Wegekreuz" end
 GetZoneText = function() return "Brachland" end
 PICKED = {}

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Update notice: Roadbook exchanges its version number invisibly with other Roadbook users in your guild and group and tells you in chat when a newer version exists. Only the version number is sent; the notice can be switched off in the options.
+
 ## 1.2.0
 
 - NPC search: a zone field lists only the NPCs in that zone, also far away ones (up to 20). `/rb find vendor in Orgrimmar` does the same.

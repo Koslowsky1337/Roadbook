@@ -21,7 +21,8 @@ Roadbook builds a turn-in round from your quest log, sorts it by travel time and
 - **Notebook:** notes per character or for all your characters, and one note per plan.
 - **Macro library:** suggested macros can be created, updated, undone and picked up onto the cursor. Suggestions come from a content pack (see below).
 - **English and German** client support.
-- **Lightweight and private:** no bundled libraries, nothing is sent to other players or anywhere else. Your data stays in your own SavedVariables.
+- **Update notice:** tells you in chat when another Roadbook user in your guild or group has a newer version. Can be switched off in the options.
+- **Lightweight and private:** no bundled libraries. The only thing Roadbook ever sends is its version number, invisibly, to guild and group for the update notice. Your data stays in your own SavedVariables.
 
 ## Requirements
 

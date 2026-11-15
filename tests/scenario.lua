@@ -1010,4 +1010,38 @@ check(#got.steps == 1 and got.steps[1].type == "goto" and got.steps[1].title == 
       "Zum Plan hinzufügen hängt den NPC als Schritt an")
 check(#ERRORS_FORWARDED == errBase8, "Keine Lua-Fehler in der NPC-Suche: " .. joined(ERRORS_FORWARDED))
 
+-- Versionshinweis
+local realVersion, clock = ns.VERSION, 1000
+local realGetTime = GetTime
+GetTime = function() return clock end
+ns.VERSION = "dev"
+IN_GUILD = true
+ns.BroadcastVersion()
+check(#ADDON_SENT == 0, "Eine Kopie ohne saubere Versionsnummer sendet nichts")
+ns.VERSION = "v1.2.0"
+ns.BroadcastVersion(); ns.BroadcastVersion()
+check(#ADDON_SENT == 1 and ADDON_SENT[1] == "RoadbookVer|v1.2.0|GUILD", "Version geht einmal an die Gilde (gedrosselt): " .. joined(ADDON_SENT))
+ns.OnVersionMessage("RoadbookVer", "1.2.0", "GUILD")
+ns.OnVersionMessage("RoadbookVer", "9.9.9-beta1", "GUILD")
+ns.OnVersionMessage("Anderes", "9.9.9", "GUILD")
+check(not ns.versionNotified and not ns.DB.newerVersion, "Gleiche Version, Beta und fremde Addons lösen nichts aus")
+clock = clock + 60
+ns.OnVersionMessage("RoadbookVer", "1.1.0", "GUILD"); RunTimers()
+check(#ADDON_SENT == 2, "Auf eine ältere Version wird geantwortet")
+ns.DB.noVersionCheck = true
+ns.OnVersionMessage("RoadbookVer", "1.3.0", "GUILD")
+check(not ns.versionNotified, "Abgeschaltet: kein Hinweis")
+ns.DB.noVersionCheck = nil
+ns.OnVersionMessage("RoadbookVer", "1.3.0", "GUILD")
+check(ns.versionNotified == "1.3.0" and ns.DB.newerVersion == "1.3.0", "Neuere Version: Hinweis und gemerkt")
+ns.versionNotified = nil
+ns.VersionLogin()
+check(ns.versionNotified == "1.3.0", "Beim nächsten Login erinnert Roadbook daran")
+ns.versionNotified = nil
+ns.DB.newerVersionAt = time() - 4 * 24 * 60 * 60
+ns.VersionLogin()
+check(not ns.versionNotified and ns.DB.newerVersion == nil, "Nach drei Tagen ohne neue Meldung ist Ruhe")
+ns.VERSION, GetTime, IN_GUILD = realVersion, realGetTime, false
+check(#ERRORS_FORWARDED == errBase8, "Keine Lua-Fehler im Versionshinweis: " .. joined(ERRORS_FORWARDED))
+
 print(("Tests: %d ok, %d Fehler, %d Knöpfe geklickt"):format(passes, fails, clicked))

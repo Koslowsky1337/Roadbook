@@ -173,6 +173,112 @@ function ns.ShowImport()
 end
 
 ---------------------------------------------------------------------------
+-- Versionshinweis. Ein Addon kommt nicht ins Internet; von einer neueren
+-- Version erfährt es nur von anderen Spielern. Jede Kopie nennt deshalb ihre
+-- Versionsnummer unsichtbar (Addon-Kanal, kein Chat) in Gilde und Gruppe.
+-- Meldet jemand eine höhere, gibt es einmal je Sitzung eine Chatzeile, und beim
+-- Login erneut, solange die Meldung jünger als drei Tage ist.
+-- Gesendet wird nur die Versionsnummer. Abschaltbar im Reiter Optionen.
+---------------------------------------------------------------------------
+local VER_PREFIX = "RoadbookVer"
+local VER_THROTTLE = 10               -- Sekunden zwischen zwei Meldungen im selben Kanal
+local VER_REMEMBER = 3 * 24 * 60 * 60 -- so lange gilt eine gehörte Version
+local verSent, verReply = {}, {}
+
+-- „1.2.0“ oder „v1.2.0“ -> Zahl zum Vergleichen. Alles andere (Beta, „dev“,
+-- Unsinn von fremden Addons) wird verworfen und löst nie einen Hinweis aus.
+local function parseVersion(text)
+    if type(text) ~= "string" or #text > 16 then return nil end
+    local a, b, c = text:match("^v?(%d+)%.(%d+)%.(%d+)$")
+    a, b, c = tonumber(a), tonumber(b), tonumber(c)
+    if not a or a > 999 or b > 999 or c > 999 then return nil end
+    return a * 1e6 + b * 1e3 + c
+end
+
+function ns.VersionCheckOn() return not ns.DB.noVersionCheck end
+
+local function sendVersion(channel)
+    if not (ns.VersionCheckOn() and parseVersion(ns.VERSION)) then return end
+    local now = GetTime()
+    if verSent[channel] and now - verSent[channel] < VER_THROTTLE then return end
+    verSent[channel] = now
+    if C_ChatInfo and C_ChatInfo.SendAddonMessage then
+        pcall(C_ChatInfo.SendAddonMessage, VER_PREFIX, ns.VERSION, channel)
+    end
+end
+
+function ns.BroadcastVersion()
+    if IsInGuild and IsInGuild() then sendVersion("GUILD") end
+    if IsInRaid and IsInRaid() then
+        sendVersion("RAID")
+    elseif IsInGroup and IsInGroup() then
+        sendVersion("PARTY")
+    end
+end
+
+local function notifyVersion(theirs)
+    if ns.versionNotified then return end
+    ns.versionNotified = theirs
+    ns.Print((L["A newer version of Roadbook is available: %s (you have %s). Update it with the CurseForge app."]):format(theirs, ns.VERSION))
+    ns.Log("I", "version", "Newer version heard: %s", theirs)
+end
+
+function ns.OnVersionMessage(prefix, text, channel)
+    if prefix ~= VER_PREFIX or not ns.VersionCheckOn() then return end
+    local theirs, mine = parseVersion(text), parseVersion(ns.VERSION)
+    if not (theirs and mine) then return end
+    if theirs < mine then
+        -- Jemand hat eine ältere Kopie: nach kurzer, zufälliger Pause antworten, damit
+        -- sie es erfährt. Antwortet ein anderer zuerst, entfällt die eigene Antwort.
+        if not verReply[channel] and (channel == "GUILD" or channel == "PARTY" or channel == "RAID") then
+            verReply[channel] = true
+            C_Timer.After(1 + math.random() * 4, function()
+                if verReply[channel] then
+                    verReply[channel] = nil
+                    sendVersion(channel)
+                end
+            end)
+        end
+        return
+    end
+    verReply[channel] = nil
+    if theirs > mine then
+        ns.DB.newerVersion, ns.DB.newerVersionAt = text, time()
+        notifyVersion(text)
+    end
+end
+
+-- Nach dem Login: an eine früher gehörte Version erinnern, dann die eigene nennen
+function ns.VersionLogin()
+    if not ns.VersionCheckOn() then return end
+    local known, mine = parseVersion(ns.DB.newerVersion), parseVersion(ns.VERSION)
+    if known and mine and known > mine and time() - (tonumber(ns.DB.newerVersionAt) or 0) < VER_REMEMBER then
+        notifyVersion(ns.DB.newerVersion)
+    else
+        ns.DB.newerVersion, ns.DB.newerVersionAt = nil, nil
+    end
+    ns.BroadcastVersion()
+end
+
+do
+    local f = CreateFrame("Frame")
+    local groupSize = 0
+    for _, e in ipairs({ "PLAYER_LOGIN", "CHAT_MSG_ADDON", "GROUP_ROSTER_UPDATE" }) do pcall(f.RegisterEvent, f, e) end
+    f:SetScript("OnEvent", ns.Wrap("version", function(_, event, ...)
+        if event == "CHAT_MSG_ADDON" then
+            ns.OnVersionMessage(...)
+        elseif event == "PLAYER_LOGIN" then
+            if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then pcall(C_ChatInfo.RegisterAddonMessagePrefix, VER_PREFIX) end
+            C_Timer.After(8, ns.VersionLogin)   -- erst nach dem Ladebildschirm
+        else
+            local size = GetNumGroupMembers and GetNumGroupMembers() or 0
+            if size > groupSize then ns.BroadcastVersion() end
+            groupSize = size
+        end
+    end))
+end
+
+---------------------------------------------------------------------------
 -- Reiter „Optionen“
 ---------------------------------------------------------------------------
 function ns.PickupText()
@@ -235,7 +341,11 @@ function ns.Build_options(panel, tab)
     check(2, -82, L["Detailed log"], L["Writes more into the log and shows warnings in chat. Useful for bug reports. Also: /rb debug"],
         function() return ns.DB.debug and true or false end,
         function(v) ns.DB.debug = v end)
-    optStepper(4, -114, "trashMinutes", function(v) return (L["Trash keeps items for: %d min"]):format(v) end)
+    check(2, -110, L["Tell me about newer versions"],
+        L["Roadbook exchanges its version number invisibly with other Roadbook users in your guild and group and tells you in chat when a newer version exists. Nothing else is sent."],
+        function() return ns.VersionCheckOn() end,
+        function(v) ns.DB.noVersionCheck = not v or nil end)
+    optStepper(4, -142, "trashMinutes", function(v) return (L["Trash keeps items for: %d min"]):format(v) end)
 
     -- rechte Spalte: NPC-Suche
     title(RIGHT_X + 2, -8, L["NPC search"])
@@ -247,22 +357,22 @@ function ns.Build_options(panel, tab)
         L["Unticked, the category Class trainer only lists the trainers of your own class."],
         function() return ns.SearchOpt().allClasses and true or false end,
         function(v) ns.SearchOpt().allClasses = v end)
-    optStepper(RIGHT_X + 2, -114, "searchHits", function(v) return (L["Search results: %d"]):format(v) end)
+    optStepper(RIGHT_X + 2, -86, "searchHits", function(v) return (L["Search results: %d"]):format(v) end)
 
     -- unten über die ganze Breite: Flüge
-    title(4, -156, L["Flights"])
-    check(2, -174, L["Announce undiscovered flight masters in chat"],
+    title(4, -184, L["Flights"])
+    check(2, -202, L["Announce undiscovered flight masters in chat"],
         L["Roadbook tells you once in chat when an undiscovered flight master is nearby. /rb fm sets the waypoint either way."],
         function() return not ns.DB.quietTaxi end,
         function(v) ns.DB.quietTaxi = not v or nil end)
     local info = ns.FontString(panel, "GameFontHighlightSmall")
-    info:SetPoint("TOPLEFT", 4, -206)
+    info:SetPoint("TOPLEFT", 4, -234)
     info:SetPoint("RIGHT", -4, 0)
     info:SetJustifyV("TOP")
     info:SetText(L["If an undiscovered flight master is almost on your way, Roadbook adds it as a stop. Knowing it saves time later. Set how much detour that is worth to you."])
-    stepper(4, -240, function() return (L["Detour up to: %s"]):format(ns.PickupText()) end,
+    stepper(4, -268, function() return (L["Detour up to: %s"]):format(ns.PickupText()) end,
         ns.PickupMax, ns.SetPickupMax, ns.PICKUP_STEP, 0, ns.PICKUP_LIMIT)
-    optStepper(RIGHT_X + 2, -240, "flySaving", function(v) return (L["A flight must save at least: %d s"]):format(v) end)
+    optStepper(RIGHT_X + 2, -268, "flySaving", function(v) return (L["A flight must save at least: %d s"]):format(v) end)
 
     tab.update = function()
         for _, cb in ipairs(checks) do cb:SetChecked(cb.get()) end
