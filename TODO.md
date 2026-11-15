@@ -36,7 +36,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Reise-Abschnitt überspringen: „Weiter“ überspringt zuerst die blaue Zeile, beim zweiten Mal den Schritt; Rechtsklick auf die graue Zeile holt sie zurück.
 - [ ] Zeppelin auf demselben Kontinent (z. B. Undercity → Grom'gol für ein Ziel im Süden) wird statt des langen Fußwegs vorgeschlagen.
 
-**NPC-Suche (nach 1.0, noch nicht veröffentlicht)**
+**NPC-Suche (1.1.0, Tag `v1.1.0` am 15.11.2026)**
 - [ ] Spiel ganz neu starten (neue Datei `Search.lua`), dann Reiter „NPC-Suche“: jede Kategorie anklicken – kommt die Liste ohne spürbaren Ruckler? In `/rb log` steht je Suche die Dauer in ms.
 - [ ] Stimmen die Treffer: nächster Händler, Gastwirt, dein Klassenlehrer, ein Berufslehrer? Keine Allianz-NPCs dabei?
 - [ ] „Weg zeigen“ setzt den Pfeil; bleibt er dort, auch wenn ein Plan geladen ist?

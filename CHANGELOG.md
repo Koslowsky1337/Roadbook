@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 - New tab **NPC search**: pick a category (vendor, repair, innkeeper, banker, auctioneer, flight master, stable master, your class trainer, weapon master, riding and profession trainers) or type part of a name. Roadbook lists the nearest NPCs of your faction by travel time. *Show the way* sets a TomTom waypoint, *Add to plan* adds the NPC as a step.
 - `/rb find <name or category>` points the arrow straight at the nearest match.
