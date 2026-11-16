@@ -432,7 +432,9 @@ function ns.FindNpcs(query, limit)
             if bad and cat and not otherFaction then return end
         end
         local cap = cat and not book and not obj and teachCap(id, cat) or nil
-        local low = (cap and myMax and cap <= myMax) or nil
+        -- „low“: bei diesem Lehrer geht es für dich nicht weiter – keine höhere Stufe und keine Rezepte
+        -- über seinem Wert. Wer 300 hat, bekommt beim Lehrer bis 300 weiterhin alle Rezepte.
+        local low = (cap and myMax and (cap < myMax or (cap == myMax and cap < 300))) or nil
         cands[#cands + 1] = { id = id, spot = spot, d = d, cap = cap, low = low, book = book, obj = obj, unfit = bad,
                               rank = book and 0 or (low and 2 or 1) }
     end
@@ -759,7 +761,8 @@ function ns.Build_search(panel, tab)
             elseif r.book then
                 text = ("%s |cff40ff40(%s)|r"):format(r.name, r.book)
             elseif r.low then
-                text = ("|cff999999%s (%s)|r"):format(r.name, (L["up to %d"]):format(r.cap))
+                text = ("|cff999999%s (%s)|r"):format(r.name,
+                    ((selCat and selCat.book) and L["only up to %d, then book and quest"] or L["only up to %d"]):format(r.cap))
             elseif r.cap then
                 text = ("%s |cffffd100(%s)|r"):format(r.name, (L["up to %d"]):format(r.cap))
             end
@@ -783,7 +786,12 @@ function ns.Build_search(panel, tab)
             if selected.book then
                 extra = " · " .. selected.book
             elseif selected.cap then
-                extra = " · " .. (selected.low and L["teaches up to skill %d – nothing new for you"] or L["teaches up to skill %d"]):format(selected.cap)
+                local what = L["teaches the rank and recipes up to skill %d"]
+                if selected.low then
+                    what = (selCat and selCat.book) and L["teaches only up to %d: beyond that a book (225) and a quest (300)"]
+                        or L["teaches only up to %d: no higher rank and no recipes above that here"]
+                end
+                extra = " · " .. what:format(selected.cap)
             end
             info:SetText(("%s%s %.1f %.1f%s"):format(selected.sub and (selected.sub .. " · ") or "", selected.zone, selected.x, selected.y, extra))
         end

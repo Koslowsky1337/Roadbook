@@ -1156,6 +1156,17 @@ do
     local en = ns.FindNpcs({ cat = cat("enchanting") })
     check(en and #en == 2 and en[1].name == "Verzauberin" and en[1].cap == 225 and en[2].cap == 150 and en[2].low,
           "Verzauberkunst um eine Stufe versetzt: " .. tostring(en and en[1].name) .. " " .. tostring(en and en[1].cap))
+    -- 300 erreicht: der Lehrer bis 300 bleibt nutzbar, der bis 225 nicht
+    SKILLS = { { name = "Schneiderei", rank = 300, max = 300, line = 197 } }
+    local t3 = ns.FindNpcs({ cat = cat("tailoring") })
+    local by = {}
+    for _, r in ipairs(t3 or {}) do by[r.cap] = r end
+    check(by[225] and by[225].low and by[150] and by[150].low, "Mit 300: Lehrer bis 150 und 225 bieten nichts über ihrem Wert")
+    SKILLS = { { name = "Schneiderei", rank = 225, max = 225, line = 197 } }
+    t3 = ns.FindNpcs({ cat = cat("tailoring") })
+    by = {}
+    for _, r in ipairs(t3 or {}) do by[r.cap] = r end
+    check(by[225] and by[225].low, "Mit 225/225: beim Lehrer bis 225 gibt es keine höhere Stufe")
     SKILLS = {}
 end
 -- EP der Abgaben

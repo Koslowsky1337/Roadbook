@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- NPC search, professions: clearer wording at each trainer. A trainer teaches the rank and the recipes up to the value shown; one below your own value is marked “only up to N” because neither a higher rank nor recipes above that are available there. Cooking, First Aid and Fishing trainers say that it goes on with a book and a quest. At 300 the trainers up to 300 are no longer greyed out.
+
 ## 1.6.2
 
 - NPC search, professions: a line above the results says how your profession goes on: which rank is next, the skill and level it needs, what it costs, and if you cannot learn it yet, why.
