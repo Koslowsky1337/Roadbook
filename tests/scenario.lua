@@ -1059,6 +1059,16 @@ ns.SearchOpt().otherFaction = true
 mb = ns.FindNpcs({ cat = cat("mailbox") })
 check(mb and #mb == 2 and mb[2].unfit, "Mit der Option: auch der Briefkasten der anderen Fraktion, markiert")
 ns.SearchOpt().otherFaction = nil
+-- Vorwärmen: danach fragt ein Klick QuestieDB nicht mehr nach Fundorten
+do
+    ns.BuildNpcIndex(); RunTimers(); ns.WarmSpawns()
+    for _ = 1, 50 do RunTimers() end
+    local realGet, asked = ObjectDB.Get, 0
+    ObjectDB.Get = function(id, key) if key == "spawns" then asked = asked + 1 end; return realGet(id, key) end
+    local again = ns.FindNpcs({ cat = cat("mailbox") })
+    ObjectDB.Get = realGet
+    check(again and #again == 1 and asked == 0, "Vorgewärmt: Klick liest keine Fundorte mehr aus QuestieDB (" .. asked .. ")")
+end
 local fire = ns.FindNpcs({ cat = cat("fire") })
 check(fire and #fire == 1 and fire[1].name == "Zwergenlagerfeuer", "Kochfeuer über das letzte Wort des englischen Namens")
 check(not ns.FindNpcs({ cat = cat("anvil") }), "Kein Amboss in den Daten: nichts gefunden")

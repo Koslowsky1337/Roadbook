@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- NPC search: clicking a category no longer stutters. Spawn points are read once and remembered, object names are read while the index is built, and the path search checks fewer candidates.
+- NPC search: clicking a category no longer stutters. Spawn points are read once and remembered, object names are read while the index is built, and the path search checks fewer candidates. The spawn points of everything listed in a category are preloaded in the background.
 
 ## 1.5.1
 

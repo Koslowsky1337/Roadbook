@@ -132,6 +132,7 @@ function ns.BuildNpcIndex()
     local function tick()
         if indexStep() then
             idx.running = nil
+            if ns.WarmSpawns then ns.WarmSpawns() end
         else
             idx.running = true
             C_Timer.After(0.02, tick)
@@ -284,6 +285,43 @@ local function nearestSpawn(id, here, place, db)
         end
     end
     return best, bestD
+end
+
+-- Vorwärmen: Sobald das Verzeichnis steht, liest Roadbook im Hintergrund die Fundorte von allem,
+-- was in einer Kategorie vorkommt (Händler, Lehrer, Briefkästen …), in kleinen Portionen. Ein Klick
+-- muss dann nur noch nach deinem Standort sortieren. Alle 190.000 Fundorte der Datenbank zu laden
+-- würde dagegen viel Speicher kosten; was nur die Textsuche trifft, wird beim ersten Treffer gemerkt.
+local WARM_CHUNK = 40
+local SERVICE_FLAGS = { 4, 8, 16, 128, 256, 4096, 8192, 16384 }
+function ns.WarmSpawns()
+    if not (idx and idx.done) or idx.warm then return end
+    idx.warm = 0
+    local objCats = {}
+    for _, c in ipairs(CATS) do if c.objects then objCats[#objCats + 1] = c end end
+    local t0, n = debugprofilestop and debugprofilestop() or 0, 0
+    local function tick()
+        local my, budget = idx, WARM_CHUNK
+        while budget > 0 and my.warm < #my.ids do
+            my.warm = my.warm + 1
+            local i, want = my.warm, false
+            if my.obj[i] then
+                for _, c in ipairs(objCats) do if inCategory(c, i) then want = true break end end
+            else
+                for _, f in ipairs(SERVICE_FLAGS) do if hasFlag(my.flags[i], f) then want = true break end end
+            end
+            if want then
+                spawnsOf(my.ids[i], my.obj[i] and ObjectDB or nil)
+                budget, n = budget - 1, n + 1
+            end
+        end
+        if my.warm < #my.ids then
+            C_Timer.After(0.02, tick)
+        else
+            ns.Log("I", "search", "Spawn points preloaded for %d NPCs and objects, %d ms",
+                n, (debugprofilestop and debugprofilestop() or 0) - t0)
+        end
+    end
+    tick()
 end
 
 -- Objekte haben keine Fraktion. Steht ein Gastwirt in der Nähe (Briefkästen stehen fast immer
