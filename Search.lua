@@ -94,7 +94,7 @@ local function hasDB() return _G.NpcDB and NpcDB.Get and NpcDB.GetAllIds end
 local function indexStep(all)
     if not idx then
         local ok, ids = pcall(NpcDB.GetAllIds)
-        idx = { src = (ok and type(ids) == "table") and ids or {}, pos = 0, ids = {}, names = {}, subs = {}, flags = {}, obj = {} }
+        idx = { src = (ok and type(ids) == "table") and ids or {}, pos = 0, ids = {}, names = {}, subs = {}, flags = {}, obj = {}, raw = {} }
         idx.npcs = #idx.src
         local ODB = _G.ObjectDB
         local ok2, oids = pcall(ODB and ODB.GetAllIds or error)
@@ -111,7 +111,11 @@ local function indexStep(all)
             local sub = not isObj and NpcDB.Get(id, "subName")
             idx.ids[n], idx.names[n], idx.flags[n] = id, name:lower(), not isObj and tonumber(NpcDB.Get(id, "npcFlags")) or 0
             idx.subs[n] = type(sub) == "string" and sub:lower() or ""
-            idx.obj[n] = isObj or nil
+            if isObj then
+                idx.obj[n] = true
+                local okR, rawName = pcall(ObjectDB.GetRaw or ObjectDB.Get, id, "name")
+                idx.raw[n] = (okR and type(rawName) == "string") and rawName:lower() or ""
+            end
         end
     end
     idx.pos = last
@@ -149,22 +153,10 @@ end
 
 local function hasFlag(flags, f) return flags % (f * 2) >= f end
 
--- Englischer Grundname eines Objekts (klein), damit die Kategorie in jeder Client-Sprache gilt
-local objNames = {}
-local function rawObjName(id)
-    local n = objNames[id]
-    if n == nil then
-        local ok, v = pcall(ObjectDB.GetRaw or ObjectDB.Get, id, "name")
-        n = (ok and type(v) == "string") and v:lower() or ""
-        objNames[id] = n
-    end
-    return n
-end
-
 local function inCategory(cat, i)
     if cat.objects then
         if not idx.obj[i] then return false end
-        local n = rawObjName(idx.ids[i])
+        local n = idx.raw[i]   -- englischer Grundname: gilt in jeder Client-Sprache
         for _, o in ipairs(cat.objects) do
             if n == o or n:sub(-#o - 1) == " " .. o then return true end
         end
@@ -252,27 +244,43 @@ end
 
 -- Nächster Fundort eines NPCs nach Luftlinie (anderer Kontinent: weit hinten);
 -- mit „place“ zählen nur Fundorte in Gebieten, deren Name diesen Text enthält
-local function nearestSpawn(id, here, place, db)
+-- Die Fundorte werden je NPC/Objekt einmal gelesen und gemerkt: QuestieDB entpackt sie bei
+-- jeder Abfrage neu, und an den gemerkten Punkten hängen auch die Wege zu den Flugmeistern.
+local spawnCache = { npc = {}, obj = {} }
+local function spawnsOf(id, db)
+    local cache = db and spawnCache.obj or spawnCache.npc
+    local list = cache[id]
+    if list then return list end
+    list = {}
     local spawns = (db or NpcDB).Get(id, "spawns")
-    local best, bestD
-    for area, list in pairs(type(spawns) == "table" and spawns or {}) do
+    local any = false
+    for area, pts in pairs(type(spawns) == "table" and spawns or {}) do
         local map = ns.AreaToUiMap(area)
-        if map and place and not zoneName(map):find(place, 1, true) then map = nil end
-        for _, xy in ipairs(type(list) == "table" and list or {}) do
+        for _, xy in ipairs(type(pts) == "table" and pts or {}) do
             local x, y = xy[1], xy[2]
             if map and type(x) == "number" and type(y) == "number" and x >= 0 and x <= 100 and y >= 0 and y <= 100 then
+                any = true
                 local p = ns.WorldPos(map, x, y, true)
                 if p then
-                    local d = 1e7
-                    if p.c == here.c then
-                        local dx, dy = p.x - here.x, p.y - here.y
-                        d = math.sqrt(dx * dx + dy * dy)
-                    end
-                    if not bestD or d < bestD then
-                        best, bestD = { map = map, x = math.floor(x * 10 + 0.5) / 10, y = math.floor(y * 10 + 0.5) / 10, p = p }, d
-                    end
+                    list[#list + 1] = { map = map, x = math.floor(x * 10 + 0.5) / 10, y = math.floor(y * 10 + 0.5) / 10, p = p }
                 end
             end
+        end
+    end
+    if #list > 0 or not any then cache[id] = list end   -- Kartendaten fehlen noch: später erneut versuchen
+    return list
+end
+
+local function nearestSpawn(id, here, place, db)
+    local best, bestD
+    for _, s in ipairs(spawnsOf(id, db)) do
+        if not place or zoneName(s.map):find(place, 1, true) then
+            local d = 1e7
+            if s.p.c == here.c then
+                local dx, dy = s.p.x - here.x, s.p.y - here.y
+                d = math.sqrt(dx * dx + dy * dy)
+            end
+            if not bestD or d < bestD then best, bestD = s, d end
         end
     end
     return best, bestD

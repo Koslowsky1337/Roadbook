@@ -1201,14 +1201,14 @@ local function nearTaxi(p)
     if p._near and p._nearVer == ver then return p._near, p._nearNew end
     local all, unknown = taxiNodesFor(p.map)
     local function nearest(list, new)
-        -- erst nach Luftlinie vorsortieren: die Wegsuche übers Gelände nur für die nächsten sechs
+        -- erst nach Luftlinie vorsortieren: die Wegsuche übers Gelände nur für die nächsten drei
         local air = {}
         for _, n in ipairs(list) do
             if n.c == p.c then air[#air + 1] = { node = n, d = dist(p, n) } end
         end
         table.sort(air, function(a, b) return a.d < b.d end)
         local scored = {}
-        for i = 1, math.min(6, #air) do scored[i] = { node = air[i].node, t = walkTime(p, air[i].node), new = new } end
+        for i = 1, math.min(NEAR_TAXI + 1, #air) do scored[i] = { node = air[i].node, t = walkTime(p, air[i].node), new = new } end
         table.sort(scored, function(a, b) return a.t < b.t end)
         local out = {}
         for i = 1, math.min(NEAR_TAXI, #scored) do out[i] = scored[i] end
@@ -2065,7 +2065,7 @@ ns.AreaToUiMap = areaToUiMap
 -- Feste Werte je Gebiet gibt es nicht; es gelten nur diese vier Zahlen für alles.
 ---------------------------------------------------------------------------
 local CELL = 80            -- Yards je Rasterfeld
-local GRID_NODES = 4000    -- mehr Felder untersucht die Wegsuche nicht (dann Luftlinie)
+local GRID_NODES = 2000    -- mehr Felder untersucht die Wegsuche nicht (dann Luftlinie)
 local GRID_CAP = 2.5       -- ein Umweg zählt höchstens als das 2,5-fache der Luftlinie
 local GRID_SLICE = 1500    -- so viele NPCs/Objekte je Durchgang einlesen (kein Ruckeln)
 local grid = { cells = {}, cache = {}, cached = 0 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- NPC search: clicking a category no longer stutters. Spawn points are read once and remembered, object names are read while the index is built, and the path search checks fewer candidates.
+
 ## 1.5.1
 
 - NPC search: new section Places with mailboxes, forges, anvils, cooking fires, meeting stones and moonwells. The text search now also finds objects by name, for example ore veins, herbs and chests (their known spawn points).
