@@ -184,9 +184,12 @@ function ns.Build_plans(panel, tab)
         row.check = row:CreateTexture(nil, "OVERLAY")
         row.check:SetTexture(ns.TEX.checkOn)
         row.check:SetAllPoints(row.box)
+        row.xp = ns.FontString(row, "GameFontHighlightSmall", "RIGHT")   -- EP der Abgabe
+        row.xp:SetPoint("RIGHT", -4, 0)
+        row.xp:SetWidth(62)
         row.where = ns.FontString(row, "GameFontHighlightSmall", "RIGHT")
-        row.where:SetPoint("RIGHT", -4, 0)
-        row.where:SetWidth(150)
+        row.where:SetPoint("RIGHT", row.xp, "LEFT", -6, 0)
+        row.where:SetWidth(230)
         row.where:SetWordWrap(false)
         row.text = ns.FontString(row, "GameFontHighlight")
         row.text:SetPoint("LEFT", row.box, "RIGHT", 4, 0)
@@ -311,7 +314,9 @@ function ns.Build_plans(panel, tab)
         local d, t = ns.PlanProgress(plan)
         title:SetText(plan.title)
         local origin = plan.auto and L["automatic"] or (plan.source == "eigen" and L["own plan"] or L["from the post"])
-        meta:SetText((L["%s · %d/%d done"]):format(origin, d, t))
+        local xp, share = ns.PlanXP(plan)
+        meta:SetText((L["%s · %d/%d done"]):format(origin, d, t)
+            .. (xp and ((share and L[" · %d XP open (%d%% of your level)"] or L[" · %d XP open"]):format(xp, share)) or ""))
         local nSkip = ns.CountSkipped(plan)
         bReset:SetText(nSkip > 0 and (L["Reset (%d)"]):format(nSkip) or L["Reset"])
 
@@ -379,6 +384,7 @@ function ns.Build_plans(panel, tab)
         end
         stepList:SetData(rows, function(row, st)
             row.plan, row.step = plan, st
+            row.xp:SetText("")
             if st.travel then
                 row.selected:SetShown(not st.travel.skipped)
                 row.box:SetTexture(ns.TEX.avail); row.check:Hide()
@@ -420,6 +426,8 @@ function ns.Build_plans(panel, tab)
             if state == "skipped" then where = L["skipped"]
             elseif state == "ready" then where = L["|cffffd100ready to turn in|r · "] .. where
             elseif detail and state ~= "done" and st.type == "item" then where = detail .. " · " .. where end
+            local xp = not editing and st.type == "turnin" and state ~= "done" and state ~= "skipped" and ns.QuestXP(st.quest)
+            if xp then row.xp:SetText((L["|cffb070ff+%d XP|r"]):format(xp)) end
             row.where:SetText(where)
         end)
     end

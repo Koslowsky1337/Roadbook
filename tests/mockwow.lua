@@ -286,7 +286,10 @@ IsPlayerSpell = function(id) return SPELLS_KNOWN[id] or false end
 C_Spell = { GetSpellName = function(id) return id == 3567 and "Teleportieren: Orgrimmar" or nil end }
 GetBindLocation = function() return BIND end
 GetItemCooldown = function() return HEARTH_CD > 0 and GetTime() or 0, HEARTH_CD end
-GetSubZoneText =function() return "Wegekreuz" end
+QUEST_XP = {}
+GetQuestLogRewardXP = function(q) return QUEST_XP[q] or 0 end
+UnitXPMax = function() return 5000 end
+GetSubZoneText = function() return "Wegekreuz" end
 GetZoneText = function() return "Brachland" end
 PICKED = {}
 function ClearCursor() end

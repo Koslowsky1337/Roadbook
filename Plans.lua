@@ -1330,6 +1330,29 @@ local function fmtTime(sec)
 end
 ns.FmtTime = fmtTime
 
+-- EP einer Abgabe, wie das Spiel sie für die Quest im Questlog nennt (nil: unbekannt, keine,
+-- oder im Reiter Optionen abgeschaltet). Ob aktive EP-Boni darin stecken, entscheidet das Spiel.
+function ns.QuestXP(quest)
+    if ns.DB.noQuestXP or not (quest and GetQuestLogRewardXP) then return nil end
+    local ok, xp = pcall(GetQuestLogRewardXP, quest)
+    xp = ok and num(xp) or nil
+    return xp and xp > 0 and xp or nil
+end
+
+-- Summe der EP aller offenen Abgaben eines Plans, dazu der Anteil an der aktuellen Stufe in Prozent
+function ns.PlanXP(plan)
+    local total = 0
+    for _, st in ipairs(plan.steps) do
+        if st.type == "turnin" then
+            local state = ns.StepState(st, plan.id)
+            if state == "open" or state == "ready" then total = total + (ns.QuestXP(st.quest) or 0) end
+        end
+    end
+    if total == 0 then return nil end
+    local max = num(UnitXPMax and UnitXPMax("player"))
+    return total, (max and max > 0) and math.floor(total / max * 100 + 0.5) or nil
+end
+
 ---------------------------------------------------------------------------
 -- Reiseweg zum nächsten Ziel: Lohnt sich ein Flug, zeigt der Pfeil erst zum
 -- Flugmeister (mit „Flug nach …“), nach der Landung zum Ziel. Zwischen

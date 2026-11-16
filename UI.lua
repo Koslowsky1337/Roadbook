@@ -255,7 +255,7 @@ end
 local function CreateMainFrame()
     local f = CreateFrame("Frame", "RoadbookFrame", UIParent, "BackdropTemplate")
     f:SetBackdrop(BACKDROP_DIALOG_32_32 or INSET_BACKDROP)
-    f:SetSize(700, 480)
+    f:SetSize(840, 480)
     f:SetFrameStrata("HIGH")
     f:SetToplevel(true)
     f:SetClampedToScreen(true)

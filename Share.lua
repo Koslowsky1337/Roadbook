@@ -434,6 +434,11 @@ function ns.Build_options(panel, tab)
         function(v) ns.SearchOpt().allClasses = v end)
     optStepper(RIGHT_X + 2, -86, "searchHits", function(v) return (L["Search results: %d"]):format(v) end)
 
+    check(RIGHT_X, -142, L["Show the XP of turn-ins in plans"],
+        L["Each open turn-in shows the XP the game states for the quest, and the plan shows the sum. Whether active XP bonuses are included is up to the game."],
+        function() return not ns.DB.noQuestXP end,
+        function(v) ns.DB.noQuestXP = not v or nil end)
+
     -- unten über die ganze Breite: Flüge
     title(4, -184, L["Flights"])
     check(2, -202, L["Announce undiscovered flight masters in chat"],

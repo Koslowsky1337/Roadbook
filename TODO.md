@@ -50,6 +50,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Gruppe mit Magier (beide Roadbook): Tracker schlägt „Frag X nach einem Portal nach …“ vor, wenn es mind. 10 Min. spart. Sieht niemand etwas davon im Chat?
 - [ ] Gruppe mit Hexenmeister nahe am Ziel: Tracker schlägt eine Beschwörung vor. Wird die Position des Gruppenmitglieds gelesen (anderes Gebiet)?
 - [ ] Reiter Optionen: neuer Block „Teleports und Portale“ passt ins Fenster, Umweg-Erklärung steht jetzt im Tooltip der +/−-Knöpfe
+- [ ] EP der Abgaben: Zahl im Plan mit den EP vergleichen, die du bei der Abgabe wirklich bekommst – mit und ohne EP-Bonus. Sind Boni schon eingerechnet?
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
 - [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 

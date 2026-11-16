@@ -1050,6 +1050,18 @@ check(not ns.versionNotified and ns.DB.newerVersion == nil, "Nach drei Tagen ohn
 ns.VERSION, GetTime, IN_GUILD = realVersion, realGetTime, false
 check(#ERRORS_FORWARDED == errBase8, "Keine Lua-Fehler im Versionshinweis: " .. joined(ERRORS_FORWARDED))
 
+-- EP der Abgaben
+ns.C.plans["p950"] = { id = "p950", title = "EP", mode = "route", created = 10, steps = {
+    { type = "turnin", quest = 6401, map = 1413, x = 50, y = 50, title = "Abgabe" },
+    { type = "goto", map = 1413, x = 51, y = 51, title = "Ort" } } }
+QS.onQuest[6401], QS.complete[6401], QUEST_XP[6401] = true, true, 1250
+local xpSum, xpShare = ns.PlanXP(ns.GetPlan("e:p950"))
+check(ns.QuestXP(6401) == 1250 and ns.QuestXP(6541) == nil and xpSum == 1250 and xpShare == 25, "EP je Abgabe und Summe mit Anteil an der Stufe")
+ns.DB.noQuestXP = true
+check(ns.QuestXP(6401) == nil and ns.PlanXP(ns.GetPlan("e:p950")) == nil, "EP-Anzeige abgeschaltet")
+ns.DB.noQuestXP = nil
+QS.onQuest[6401], QS.complete[6401], QUEST_XP[6401] = nil, nil, nil
+ns.C.plans["p950"] = nil
 -- Teleports, Ruhestein, Portale der Gruppe, Beschwörung
 local errBase9 = #ERRORS_FORWARDED
 local function kind() return ns.travel and ns.travel.hop.kind or "-" end
