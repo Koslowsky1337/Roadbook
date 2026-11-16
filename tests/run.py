@@ -21,5 +21,6 @@ loader = lua.eval("function(src, name) local fn, err = loadstring(src, name); if
 for f in files:
     loader(read(os.path.join(ADDON_DIR, *f.split("\\"))), "@" + f)("Roadbook", lua.globals().RB_NS)
 lua.execute(read(os.path.join(HERE, "post_fixture.lua")))   # feste Test-Post (wie das Zusatz-Addon Roadbook_Post)
+lua.execute(read(os.path.join(HERE, "links_fixture.lua")))   # Linien und Flugnetz der Testwelt
 lua.execute(read(SCENARIO))
 print("Unbekannte Globals:", sorted(k for k in lua.globals().UNKNOWN.keys()))

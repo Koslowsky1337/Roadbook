@@ -365,7 +365,6 @@ L["Travel leg: Roadbook sends you here first because that is faster."] = "Reise-
 L["Right-click: skip it – the arrow then points straight to the step. Right-click again brings it back."] = "Rechtsklick: überspringen – der Pfeil zeigt dann direkt zum Schritt. Nochmal Rechtsklick holt ihn zurück."
 L["- The way to a flight master or dock shows as its own line in the plan; “Skip” or a right-click skips it first."] = "- Der Weg zum Flugmeister oder Anleger steht als eigene Zeile im Plan; „Weiter“ oder ein Rechtsklick überspringt ihn zuerst."
 L["%s · then %s"] = "%s · dann %s"
-L["Tram %s – %s"] = "Tiefenbahn %s – %s"
 L["First to the undiscovered flight master in %s (you learn it on the way), fly to %s%s"] = "Erst zum unbekannten Flugmeister %s (du lernst ihn dabei kennen), Flug nach %s%s"
 L["Undiscovered flight master %s on the way (+%s) – pick it up"] = "Unbekannter Flugmeister %s liegt am Weg (+%s) – mitnehmen"
 L["Flight master %s: open the flight map to learn this flight point."] = "Flugmeister %s: Flugkarte öffnen, dann kennst du diesen Flugpunkt."

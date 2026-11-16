@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.6.0
+
+- Flights are timed by the real length of the flight paths over the flight points you know, not by the straight line.
+- Boat, zeppelin and airship stops now come from OpenMap (MIT license), including the lines of WoW Forever. The Deeprun Tram is no longer part of the route calculation.
 
 - NPC search, “Show the way”: the way now uses flights, zeppelins, teleports and zone crossings like a plan step does. The arrow points to the flight master or crossing first and moves on by itself.
 - Zone crossings are only learned while you move yourself, not while a boat carries you.

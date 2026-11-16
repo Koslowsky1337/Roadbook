@@ -128,7 +128,8 @@ Roadbook baut aus deinem Questlog eine Abgaberunde, sortiert sie nach Reisezeit 
 
 - Waypoints and arrow: [TomTom](https://www.curseforge.com/wow/addons/tomtom) by Cladhaire (used through its public API, not included).
 - Quest and NPC data: [QuestieDB](https://www.curseforge.com/wow/addons/questiedb) by the Questie team (read at runtime through its API, not included and not copied; see its own license).
-- Boat, zeppelin and tram stops and the starting list of zone crossings: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; positions of the zeppelin and ship masters from QuestieDB.
+- Boat, zeppelin and airship stops and the flight paths with their real lengths: taken from [OpenMap](https://github.com/openmap-world/openmap) by the OpenMap contributors (MIT license, see `LICENSES/OpenMap.txt`).
+- Starting list of zone crossings: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; Roadbook replaces each entry with the spot measured while you play.
 
 ## License
 

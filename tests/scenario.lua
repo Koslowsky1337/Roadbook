@@ -1091,6 +1091,32 @@ do
     check(steps == 10 and finished, "Danach läuft sie zu Ende: " .. steps)
     debugprofilestop = nil
 end
+-- Daten aus OpenMap: Linien in Weltkoordinaten und das Flugnetz
+do
+    MAPOFF[1411], MAPOFF[1420] = { 8000, 1000, 1000, 7 }, { 1000, 1000, 1000, 8 }
+    ns.SetLinks({ { 7, 8510, 1135, 8, 1610, 1590, "Horde", ns.L["Zeppelin %s – %s"], "Hier", "Dort", w = true } })
+    ns.ClearRouteCache()
+    local a, b = ns.WorldPos(1411, 60, 20, true), ns.WorldPos(1420, 50, 50, true)
+    local _, _, how, via = ns.LegText(a, b)
+    local t, how2, link = ns.LegCost(a, b)
+    check(how2 == "schiff" and link and link.name == "Zeppelin Hier – Dort" and link.am and link.am.map == 1411
+          and math.abs(link.am.x - 51) < 0.2, "Linie in Weltkoordinaten: Anleger auf der Gebietskarte: " .. tostring(link and link.am and link.am.x))
+    ns.SetLinks(LINKS_FIXTURE); ns.ClearRouteCache()
+    -- Flugnetz: 1 -> 2 -> 3, je 3000 Yards
+    local n1, n2, n3 = { id = 1, c = 1, x = 0, y = 0 }, { id = 2, c = 1, x = 1000, y = 0 }, { id = 3, c = 1, x = 2000, y = 0 }
+    local keep = ns.C.taxi
+    ns.C.taxi = { [1] = true, [2] = true, [3] = true }
+    ns.SetFlightPaths({ 1, 2, 3000, 2, 3, 3000 })
+    ns.taxiVersion = ns.taxiVersion + 1
+    check(ns.FlyTime(n1, n3) == 200, "Flugzeit über die echte Strecke (6000 Yards): " .. tostring(ns.FlyTime(n1, n3)))
+    ns.C.taxi = { [1] = true, [3] = true }
+    ns.taxiVersion = ns.taxiVersion + 1
+    check(math.abs(ns.FlyTime(n1, n3) - 2000 / 28) < 0.01, "Zwischenhalt unbekannt: Luftlinie wie bisher")
+    check(math.abs(ns.FlyTime(n1, { id = 99, c = 1, x = 2800, y = 0 }) - 100) < 0.01, "Flugpunkt nicht im Netz: Luftlinie")
+    ns.C.taxi = keep
+    ns.SetFlightPaths({})
+    ns.taxiVersion = ns.taxiVersion + 1
+end
 -- EP der Abgaben
 ns.C.plans["p950"] = { id = "p950", title = "EP", mode = "route", created = 10, steps = {
     { type = "turnin", quest = 6401, map = 1413, x = 50, y = 50, title = "Abgabe" },

@@ -1225,37 +1225,38 @@ local function nearTaxi(p)
 end
 
 ---------------------------------------------------------------------------
--- Zeppeline, Schiffe und die Tiefenbahn. Man muss sie nicht „kennenlernen“
--- (anders als Flugpunkte): alle Linien der eigenen Fraktion zählen immer.
+-- Zeppeline, Schiffe und Luftschiffe. Man muss sie nicht „kennenlernen“ (anders
+-- als Flugpunkte): alle Linien der eigenen Fraktion zählen immer.
 --
--- Quellen: Leatrix Maps (Leatrix_Maps_Icons.lua: alle Haltestellen auf Forever
--- mit Ziel, Fraktion und Fahrtrichtung) und QuestieDB (Standort der Zeppelin-
--- und Schiffsmeister in Orgrimmar, Undercity, Grom'gol, Ratchet und Booty Bay).
+-- Quelle der Anleger: OpenMap (Data/Forever/Places.lua, „transports“), MIT-Lizenz,
+-- Copyright (c) 2026 OpenMap contributors – siehe LICENSES/OpenMap.txt. Die Positionen
+-- sind Weltkoordinaten (Kontinent, x, y in Yards), wie das Spiel sie selbst liefert.
+-- Fraktion und Ortsnamen sind hier ergänzt.
 --
--- { Karte, x, y, Karte, x, y, Fraktion (nil = alle), Art, Ort A, Ort B, nur A → B }
+-- { Kontinent, x, y, Kontinent, x, y, Fraktion (nil = alle), Art, Ort A, Ort B, nur A → B; w = true }
 -- Ein Ort als Zahl ist eine Karten-Nummer: der Name kommt dann vom Spiel.
+-- Ohne „w“ sind es Karte, x, y in Prozent (so legen die Tests ihre Linien an).
 ---------------------------------------------------------------------------
-local ZEP, BOAT, TRAM = L["Zeppelin %s – %s"], L["Boat %s – %s"], L["Tram %s – %s"]
+local ZEP, BOAT = L["Zeppelin %s – %s"], L["Boat %s – %s"]
 local LINKS = {
-    -- Horde
-    { 1411, 50.82, 13.54, 1420, 60.74, 58.87, "Horde", ZEP, "Orgrimmar", "Undercity" },
-    { 1411, 50.69, 12.89, 1434, 31.43, 29.91, "Horde", ZEP, "Orgrimmar", "Grom'gol" },
-    { 1420, 61.78, 59.18, 1434, 31.54, 29.36, "Horde", ZEP, "Undercity", "Grom'gol" },
-    { 1412, 34.3, 26.1, 2521, 57.7, 81.0, "Horde", ZEP, "Thunder Bluff", L["Zephras Isle"] },
-    { 1446, 68.6, 23.0, 2548, 80.6, 54.6, "Horde", BOAT, "Tanaris", L["Riverglades"] },
     -- alle
-    { 1413, 63.54, 38.61, 1434, 26.08, 73.35, nil, BOAT, "Ratchet", "Booty Bay" },
+    { 1, -1005.6, -3841.6, 0, -14277.7, 582.9, nil, BOAT, "Ratchet", "Booty Bay", w = true },
+    -- Horde
+    { 1, 1318.1, -4658.0, 0, 2062.4, 293.0, "Horde", ZEP, "Orgrimmar", "Undercity", w = true },
+    { 1, 1360.9, -4631.3, 0, -12464.0, 231.6, "Horde", ZEP, "Orgrimmar", "Grom'gol", w = true },
+    { 0, 2062.6, 235.3, 0, -12406.9, 211.8, "Horde", ZEP, "Undercity", "Grom'gol", w = true },
+    { 1, -802.0, 366.5, 2991, 1952.5, 1019.1, "Horde", ZEP, "Thunder Bluff", L["Zephras Isle"], w = true },
+    { 1, -6932.6, -4950.8, 0, -8232.3, -5800.8, "Horde", BOAT, "Tanaris", L["Riverglades"], w = true },
     -- Allianz
-    { 1453, 21.8, 56.9, 1439, 30.5, 40.9, "Alliance", BOAT, "Stormwind", "Auberdine" },
-    { 1439, 33.3, 39.8, 1438, 54.8, 97.2, "Alliance", BOAT, "Auberdine", "Rut'theran" },
-    { 1437, 4.7, 63.8, 1445, 71.7, 56.7, "Alliance", BOAT, L["Menethil Harbor"], "Theramore" },
-    { 2521, 65.8, 83.8, 1416, 12.8, 51.2, "Alliance", BOAT, L["Zephras Isle"], 1416 },
-    { 1444, 43.1, 42.8, 1444, 31.0, 39.5, "Alliance", BOAT, 1444, "Feathermoon" },
-    { 1453, 66.6, 34.7, 1455, 73.0, 50.2, "Alliance", TRAM, "Stormwind", "Ironforge" },
-    -- Rundfahrt, nur in dieser Richtung: Auberdine → Menethil → Southshore → Auberdine
-    { 1439, 32.3, 44.1, 1437, 4.5, 56.7, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"], true },
-    { 1437, 4.5, 56.7, 1424, 50.7, 70.4, "Alliance", BOAT, L["Menethil Harbor"], "Southshore", true },
-    { 1424, 50.7, 70.4, 1439, 32.3, 44.1, "Alliance", BOAT, "Southshore", "Auberdine", true },
+    { 0, -8654.5, 1344.4, 1, 6548.3, 942.2, "Alliance", BOAT, "Stormwind", "Auberdine", w = true },
+    { 1, 6594.4, 759.8, 1, 8532.0, 1023.7, "Alliance", BOAT, "Auberdine", "Rut'theran", w = true },
+    { 0, -3905.2, -585.8, 1, -4016.4, -4740.6, "Alliance", BOAT, L["Menethil Harbor"], "Theramore", w = true },
+    { 0, 544.8, 424.2, 2991, 1848.3, 569.1, "Alliance", ZEP, 1416, L["Zephras Isle"], w = true },
+    { 1, -4347.8, 2444.4, 1, -4197.3, 3286.6, "Alliance", BOAT, 1444, "Feathermoon", w = true },
+    -- Rundfahrt, nur in dieser Richtung: Menethil → Southshore → Auberdine → Menethil
+    { 0, -3709.5, -575.1, 0, -1102.6, -554.7, "Alliance", BOAT, L["Menethil Harbor"], "Southshore", true, w = true },
+    { 0, -1102.6, -554.7, 1, 6406.2, 823.1, "Alliance", BOAT, "Southshore", "Auberdine", true, w = true },
+    { 1, 6406.2, 823.1, 0, -3709.5, -575.1, "Alliance", BOAT, "Auberdine", L["Menethil Harbor"], true, w = true },
 }
 local function placeName(v)
     if type(v) ~= "number" then return v end
@@ -1270,27 +1271,147 @@ function ns.ClearRouteCache()
     linkCache = nil
 end
 
+function ns.SetLinks(list)
+    LINKS, linkCache = list, nil
+end
+
+-- Kartenposition eines Weltpunkts für den TomTom-Punkt: Gebietskarte, notfalls die des Kontinents
+local CONT_MAP = { [0] = 1415, [1] = 1414 }
+local function mapPosOf(p)
+    if not (C_Map and C_Map.GetMapPosFromWorldPos and CreateVector2D) then return nil end
+    for try = 1, 2 do
+        local over = try == 2 and CONT_MAP[p.c] or nil
+        if try == 1 or over then
+            local ok, map, pos = pcall(C_Map.GetMapPosFromWorldPos, p.c, CreateVector2D(p.x, p.y), over)
+            local x, y = vecXY(ok and pos)
+            map = ok and num(map) or over
+            if map and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
+                return { map = map, x = math.floor(x * 1000 + 0.5) / 10, y = math.floor(y * 1000 + 0.5) / 10 }
+            end
+        end
+    end
+end
+
 local function links()
-    if linkCache then return linkCache end
-    local list, complete = {}, true
+    if linkCache and not (linkCache.retry and GetTime() > linkCache.retry) then return linkCache end
+    local list = {}
     local mine = UnitFactionGroup and UnitFactionGroup("player")
     for _, l in ipairs(LINKS) do
         if not l[7] or l[7] == mine then
-            local a, b = ns.WorldPos(l[1], l[2], l[3]), ns.WorldPos(l[4], l[5], l[6])
-            if not (a and b) then
-                complete = false
+            local a, b, am, bm
+            if l.w then
+                a, b = { c = l[1], x = l[2], y = l[3] }, { c = l[4], x = l[5], y = l[6] }
+                am, bm = mapPosOf(a), mapPosOf(b)
+                a.map, b.map = am and am.map, bm and bm.map
+                -- ohne Kartenposition zählt die Linie trotzdem; nur der Punkt am Anleger fehlt dann
+                if not (am and bm) then list.retry = GetTime() + 30 end
             else
+                a, b = ns.WorldPos(l[1], l[2], l[3]), ns.WorldPos(l[4], l[5], l[6])
+                am, bm = { map = l[1], x = l[2], y = l[3] }, { map = l[4], x = l[5], y = l[6] }
+                if not (a and b) then list.retry = GetTime() + 30 end
+            end
+            if a and b then
                 local name = l[8]:format(placeName(l[9]), placeName(l[10]))
-                local am = { map = l[1], x = l[2], y = l[3] }
-                local bm = { map = l[4], x = l[5], y = l[6] }
                 table.insert(list, { a = a, b = b, name = name, am = am, bm = bm })
                 if not l[11] then table.insert(list, { a = b, b = a, name = name, am = bm, bm = am }) end
             end
         end
     end
-    if complete then linkCache = list end   -- sonst beim nächsten Mal neu versuchen
+    linkCache = list
     return list
 end
+
+---------------------------------------------------------------------------
+-- Flugnetz: welche Flugpunkte direkt verbunden sind und wie lang die Strecke wirklich ist.
+-- Quelle: OpenMap (Data/Forever/FlightData.lua, „paths“), MIT-Lizenz, Copyright (c) 2026
+-- OpenMap contributors – siehe LICENSES/OpenMap.txt. Je Strecke: von, nach, Länge in Yards
+-- (Flugpunkt-Nummern wie im Spiel). Geflogen wird über bekannte Flugpunkte; die Flugzeit ist
+-- die Summe der Strecken. Fehlt ein Flugpunkt im Netz oder gibt es keine Verbindung über
+-- bekannte Punkte, gilt wie bisher die Luftlinie.
+---------------------------------------------------------------------------
+local PATH_SPEED = 30   -- Yards/s auf der Strecke (gemessen: Crossroads → Ratchet, 1535 Yards in 52 s)
+local FLIGHT_PATHS = {
+    2, 4, 2290, 4, 2, 2435, 5, 2, 3354, 2, 5, 3342, 6, 2, 6103, 2, 6, 7628, 8, 6, 3152, 6, 8, 2915, 7, 6, 2207, 6, 7,
+    3694, 11, 10, 3117, 10, 11, 3286, 12, 2, 2609, 2, 12, 3456, 13, 11, 4059, 11, 13, 4150, 14, 6, 5696, 6, 14, 7748,
+    16, 6, 7917, 6, 16, 7443, 17, 11, 7653, 11, 17, 8917, 20, 18, 2419, 18, 20, 3023, 18, 21, 12119, 21, 18, 12412,
+    21, 11, 14698, 11, 21, 14774, 2, 19, 7278, 19, 2, 6548, 23, 22, 6618, 25, 22, 5365, 25, 23, 4240, 22, 25, 4670,
+    23, 25, 3240, 28, 26, 4409, 26, 28, 5250, 29, 22, 5152, 22, 29, 5339, 30, 22, 6690, 22, 30, 5996, 32, 31, 4844,
+    31, 32, 4722, 33, 26, 5210, 26, 33, 5310, 18, 56, 7881, 26, 27, 2513, 27, 26, 2536, 56, 18, 7681, 37, 32, 9080,
+    38, 22, 5240, 22, 38, 4606, 32, 37, 9925, 26, 32, 19910, 32, 26, 18349, 39, 32, 4595, 32, 39, 4689, 40, 23, 10462,
+    23, 40, 12372, 41, 26, 13810, 26, 41, 13979, 42, 22, 7693, 22, 42, 7475, 43, 14, 2025, 14, 43, 2112, 44, 23, 3575,
+    23, 44, 2928, 45, 2, 5593, 2, 45, 5262, 4, 5, 3865, 4, 12, 2878, 12, 4, 2770, 5, 4, 3990, 4, 19, 5526, 19, 4,
+    5417, 5, 12, 1784, 12, 5, 1767, 12, 19, 5083, 19, 12, 5210, 12, 45, 2867, 45, 12, 2700, 6, 43, 8745, 43, 6, 7366,
+    8, 7, 4429, 7, 8, 4810, 8, 16, 4839, 16, 8, 5053, 7, 16, 3371, 16, 7, 3753, 7, 14, 3209, 14, 7, 3296, 16, 14,
+    2583, 14, 16, 2195, 16, 43, 2124, 43, 16, 2238, 25, 29, 4481, 29, 25, 4448, 25, 30, 5528, 30, 25, 5782, 25, 44,
+    4994, 44, 25, 5137, 48, 25, 7186, 25, 48, 7526, 26, 49, 4346, 22, 44, 7975, 44, 22, 7619, 52, 49, 3563, 55, 25,
+    4832, 58, 25, 6740, 53, 48, 5791, 48, 53, 5604, 30, 40, 2735, 22, 40, 8577, 40, 30, 2562, 40, 22, 9002, 60, 11,
+    475, 62, 27, 4324, 63, 22, 15876, 21, 56, 8315, 56, 21, 8447, 21, 17, 7776, 17, 21, 7650, 17, 13, 3482, 13, 17,
+    3523, 39, 31, 5255, 31, 39, 5085, 31, 41, 5304, 41, 31, 4594, 61, 23, 2853, 23, 61, 2665, 64, 26, 9016, 26, 64,
+    8951, 64, 65, 8462, 61, 25, 4782, 25, 61, 4847, 23, 55, 6789, 55, 23, 6423, 23, 48, 7497, 52, 65, 3599, 48, 23,
+    7700, 56, 20, 5605, 20, 56, 6103, 22, 55, 7068, 66, 14, 2535, 14, 66, 2407, 55, 22, 6663, 43, 67, 4801, 58, 61,
+    4993, 61, 58, 4973, 67, 43, 4756, 42, 25, 7862, 25, 58, 6808, 25, 42, 7504, 38, 29, 5882, 11, 68, 7774, 29, 38,
+    4199, 68, 11, 7763, 25, 55, 4866, 20, 21, 9703, 21, 20, 9273, 53, 69, 3882, 69, 48, 4552, 48, 69, 4800, 69, 53,
+    4117, 49, 52, 3828, 49, 26, 4095, 65, 26, 5501, 65, 52, 3531, 65, 64, 8426, 37, 41, 6904, 41, 37, 6760, 42, 38,
+    5964, 38, 42, 5826, 70, 21, 2945, 21, 70, 2542, 70, 56, 6300, 56, 70, 5841, 71, 45, 6237, 45, 71, 6216, 11, 60,
+    475, 37, 26, 8325, 26, 37, 8593, 26, 65, 5562, 22, 23, 6176, 40, 55, 6617, 40, 42, 5906, 55, 40, 6628, 42, 40,
+    5963, 40, 25, 8926, 25, 40, 9002, 39, 73, 5694, 40, 72, 6847, 53, 23, 8824, 23, 53, 9309, 44, 48, 6918, 48, 44,
+    7187, 74, 6, 2738, 6, 74, 2522, 21, 75, 1671, 75, 21, 2078, 70, 75, 2117, 75, 70, 2270, 71, 74, 3061, 74, 71,
+    2837, 76, 13, 4741, 13, 76, 5815, 11, 76, 8402, 76, 11, 8413, 77, 25, 2336, 25, 77, 2698, 22, 77, 2567, 77, 22,
+    3371, 77, 30, 3729, 30, 77, 4065, 72, 40, 7080, 73, 39, 5511, 71, 2, 4476, 2, 71, 4666, 6, 66, 8511, 66, 6, 7515,
+    66, 67, 4369, 67, 66, 4444, 67, 6, 10678, 6, 67, 10147, 10, 13, 2849, 13, 10, 2975, 28, 33, 4477, 33, 28, 4515,
+    32, 64, 7039, 64, 32, 7202, 64, 52, 5125, 52, 64, 5073, 72, 42, 3840, 42, 72, 3839, 73, 41, 5153, 79, 39, 3045,
+    79, 40, 3341, 79, 72, 2945, 79, 73, 2759, 72, 79, 2836, 73, 79, 2668, 39, 79, 3052, 40, 79, 3143, 80, 32, 3144,
+    80, 25, 2023, 25, 80, 1535, 32, 80, 3442, 64, 80, 4055, 80, 64, 3941, 28, 64, 4414, 64, 28, 4566, 5, 71, 1809, 71,
+    5, 1862, 41, 73, 4714, 76, 68, 4105, 68, 76, 4176, 43, 66, 1556, 66, 43, 1926, 37, 33, 3461, 33, 37, 3678, 49, 65,
+    1766, 65, 49, 1941, 61, 44, 2858, 44, 61, 2782, 17, 76, 2554, 76, 17, 2673, 42, 30, 3191, 30, 42, 3654, 84, 85,
+    1453, 84, 86, 1886, 84, 87, 1501, 53, 44, 3824, 44, 53, 3672, 84, 85, 1453, 3203, 56, 4570, 56, 3203, 5024, 3203,
+    21, 3572, 21, 3203, 3784, 3203, 70, 3955, 70, 3203, 4088, 3203, 17, 9732, 17, 3203, 9633, 3276, 5, 3861, 5, 3276,
+    3929, 3276, 71, 3634, 71, 3276, 3912, 3276, 8, 5113, 8, 3276, 5447,
+}
+local flightPaths, flightGraph, flightCache = FLIGHT_PATHS, nil, {}
+
+function ns.SetFlightPaths(list)
+    flightPaths, flightGraph, flightCache = list, nil, {}
+end
+
+-- Flugzeit in Sekunden von Flugpunkt A nach B (ohne Start und Landung)
+local function flyTime(A, B)
+    if not flightGraph then
+        flightGraph = {}
+        for k = 1, #flightPaths, 3 do
+            local from = flightPaths[k]
+            flightGraph[from] = flightGraph[from] or {}
+            table.insert(flightGraph[from], { flightPaths[k + 1], flightPaths[k + 2] })
+            flightGraph[flightPaths[k + 1]] = flightGraph[flightPaths[k + 1]] or {}   -- auch reine Endpunkte gehören zum Netz
+        end
+    end
+    local a, b = A.id, B.id
+    local air = dist(A, B) / FLY_SPEED
+    if not (a and b and flightGraph[a] and flightGraph[b]) then return air end
+    if flightCache.ver ~= ns.taxiVersion then flightCache = { ver = ns.taxiVersion } end
+    local D = flightCache[a]
+    if not D then
+        local known, done = taxiKnownSet(), {}
+        D = { [a] = 0 }
+        while true do
+            local k, kd
+            for n, d in pairs(D) do
+                if not done[n] and (not kd or d < kd) then k, kd = n, d end
+            end
+            if not k then break end
+            done[k] = true
+            for _, e in ipairs(flightGraph[k] or {}) do
+                if not done[e[1]] and known[e[1]] then
+                    local d = kd + e[2]
+                    if not D[e[1]] or d < D[e[1]] then D[e[1]] = d end
+                end
+            end
+        end
+        flightCache[a] = D
+    end
+    return D[b] and D[b] / PATH_SPEED or air
+end
+ns.FlyTime = flyTime
 
 ---------------------------------------------------------------------------
 -- Kosten eines Wegs a → b in Sekunden; dazu wie (lauf/flug/schiff) und womit
@@ -1302,7 +1423,7 @@ local function sameContinent(a, b)
     local function try(A)
         for _, B in ipairs(nb) do
             if A.node ~= B.node then
-                local t = A.t + FLY_OVERHEAD + dist(A.node, B.node) / FLY_SPEED + B.t
+                local t = A.t + FLY_OVERHEAD + flyTime(A.node, B.node) + B.t
                 if t < best then
                     best, how, via = t, "flug", { from = A.node, to = B.node, walkTo = A.t, walkFrom = B.t, new = A.new }
                 end
@@ -1581,7 +1702,7 @@ local function hopCost(from, to, hop)
     if not start or start.c ~= from.c then return math.huge end
     if hop.kind == "neu" then return walkTime(from, hop.node) + (ns.LegCost(hop.node, to) or NO_LINK) end
     if hop.kind == "flug" then
-        return walkTime(from, hop.from) + FLY_OVERHEAD + dist(hop.from, hop.to) / FLY_SPEED + (ns.LegCost(hop.to, to) or NO_LINK)
+        return walkTime(from, hop.from) + FLY_OVERHEAD + flyTime(hop.from, hop.to) + (ns.LegCost(hop.to, to) or NO_LINK)
     end
     return walkTime(from, hop.dock) + (ns.LegCost(hop.dock, to) or NO_LINK)
 end
