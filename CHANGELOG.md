@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.2
 
 - NPC search, professions: a line above the results says how your profession goes on: which rank is next, the skill and level it needs, what it costs, and if you cannot learn it yet, why.
 - Enchanting trainers showed one rank too many. The “Expert Enchanter” of the capitals teaches up to 150; Expert comes from the “Artisan Enchanter”, Artisan from the “Master Enchanter”.
