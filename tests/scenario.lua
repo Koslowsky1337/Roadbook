@@ -1140,6 +1140,7 @@ end
 -- Gebietsübergänge: zwei Gebiete nebeneinander, ein Übergang weit oben
 do
     local oldSeed, oldOff, oldInfo = ns.CROSSINGS, MAPOFF[1413], MAPINFO[1413]
+    local errBase9g = #ERRORS_FORWARDED
     MAPOFF[1413], MAPOFF[9500] = { 0, 0, 4000 }, { 4000, 0, 4000 }
     MAPINFO[1413], MAPINFO[9500] = { name = "Brachland", mapType = 3 }, { name = "Nebenan", mapType = 3 }
     ns.CROSSINGS = { { 1413, 100, 10, 9500 }, { 9500, 0, 10, 1413 }, { 4711, 5, 5, 1413 } }
@@ -1174,6 +1175,19 @@ do
     ns.wp.gatePassed = nil
     ns.DeactivatePlan(); RunTimers()
     ns.C.plans["p960"] = nil
+    -- „Weg zeigen“ aus der Suche nutzt denselben Reiseweg
+    PLAYER = { map = 1413, x = 0.9, y = 0.9 }
+    local target = { id = 1, name = "Ferner NPC", map = 9500, x = 10, y = 90, zone = "Nebenan" }
+    ns.GoToNpc(target)
+    check(TomTom.arrow and TomTom.arrow.title == "Übergang – Nebenan" and TomTom.arrow.from == "Roadbook search",
+          "Weg zeigen: Pfeil erst zum Übergang: " .. tostring(TomTom.arrow and TomTom.arrow.title))
+    PLAYER = { map = 9500, x = 0.02, y = 0.5 }
+    ns.CheckSearchGoal()
+    check(TomTom.arrow and TomTom.arrow.title == "Ferner NPC", "Im Zielgebiet zeigt der Pfeil zum NPC: " .. tostring(TomTom.arrow and TomTom.arrow.title))
+    PLAYER = { map = 9500, x = 0.1, y = 0.9 }
+    ns.CheckSearchGoal(); ns.CheckSearchGoal()
+    check(#ERRORS_FORWARDED == errBase9g, "Am Ziel endet die Führung ohne Fehler")
+    ns.wp.gatePassed = nil
     -- Abgleich: Beobachtung nah am Startwert ersetzt ihn, weit weg kommt neu dazu
     ns.LearnCrossing(1413, 9500, { c = 1, x = 4000, y = 500 })
     local lastLog = ns.DB.log[#ns.DB.log].m
@@ -1189,8 +1203,17 @@ do
     ns.DB.gates = nil; ns.ResetGates()
     PLAYER = { map = 1413, x = 0.99, y = 0.5 }
     ns.CheckCrossing()
+    GetUnitSpeed = function() return 0 end
     PLAYER = { map = 9500, x = 0.01, y = 0.5 }
     ns.CheckCrossing()
+    check(not (ns.DB.gates and ns.DB.gates["1413>9500"]), "Getragen (Schiff, Tempo 0): kein Übergang gelernt")
+    GetUnitSpeed = function() return 7 end
+    PLAYER = { map = 1413, x = 0.99, y = 0.5 }
+    ns.CheckCrossing()
+    ns.DB.gates = nil
+    PLAYER = { map = 9500, x = 0.01, y = 0.5 }
+    ns.CheckCrossing()
+    GetUnitSpeed = nil
     check(ns.DB.gates and ns.DB.gates["1413>9500"] and #ns.DB.gates["1413>9500"] == 1, "Gebietswechsel zu Fuß wird erkannt")
     local export = ns.CrossingsText()
     check(export and export:find("1 zone crossing(s) seen on foot", 1, true) and export:find(", 9500 }, -- ", 1, true)

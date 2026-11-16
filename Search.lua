@@ -457,11 +457,57 @@ end
 -- Was man mit einem Treffer machen kann
 ---------------------------------------------------------------------------
 local searchUid
+local goal   -- der Treffer, zu dem „Weg zeigen“ gerade führt: { r, step, sig, travelUid }
 
--- Direkter Weg: ein TomTom-Punkt mit Pfeil (der vorige Such-Punkt verschwindet)
+-- Der beste Weg zum Treffer, wie bei einem Plan-Schritt: lohnt sich ein Flug, ein Zeppelin, ein
+-- Teleport oder führt der Weg über einen Gebietsübergang, zeigt der Pfeil zuerst dorthin.
+local function routeGoal()
+    local tt = _G.TomTom
+    if not (tt and goal) then return end
+    local tr = ns.ComputeTravel and ns.ComputeTravel(goal.step) or nil
+    local sig = tr and tr.sig or "direct"
+    if sig == goal.sig then return end
+    goal.sig = sig
+    if goal.travelUid then
+        pcall(tt.RemoveWaypoint, tt, goal.travelUid)
+        goal.travelUid = nil
+    end
+    if tr and tr.waypoint then
+        local w = tr.waypoint
+        local ok, uid = pcall(tt.AddWaypoint, tt, w.map, w.x / 100, w.y / 100,
+            { title = ns.StepTitle(w), from = "Roadbook search", persistent = false, crazy = true })
+        goal.travelUid = ok and uid or nil
+    elseif searchUid and tt.SetCrazyArrow then
+        pcall(tt.SetCrazyArrow, tt, searchUid, 15, goal.r.name)
+    end
+    if tr then
+        ns.Print(tr.text .. L[" – for "] .. goal.r.name)
+        ns.Log("I", "search", "Route to %s: %s", goal.r.name, tr.text)
+    end
+end
+
+-- Alle 2 Sekunden: Weg zum Treffer nachführen (gelandet, Übergang durchquert …); endet am Ziel
+-- oder wenn du den Punkt bei TomTom entfernst
+function ns.CheckSearchGoal()
+    local tt = _G.TomTom
+    if not goal or ns.staging then return end
+    local here, to = ns.PlayerPos(), ns.StepPos(goal.step)
+    local arrived = here and to and here.c == to.c and ((here.x - to.x) ^ 2 + (here.y - to.y) ^ 2) < 30 * 30
+    if not tt or arrived or not (searchUid and ns.UidAlive(tt, searchUid)) then
+        if tt and goal.travelUid then pcall(tt.RemoveWaypoint, tt, goal.travelUid) end
+        goal = nil
+        return
+    end
+    if UnitOnTaxi and UnitOnTaxi("player") then return end   -- im Flug nichts ändern
+    routeGoal()
+end
+
+-- Weg zum Treffer: ein TomTom-Punkt am Ziel (der vorige Such-Punkt verschwindet), dazu der Reiseweg
 function ns.GoToNpc(r)
     local tt = _G.TomTom
     if not (tt and r) then return end
+    if goal and goal.travelUid then pcall(tt.RemoveWaypoint, tt, goal.travelUid) end
+    goal = nil
     if searchUid and tt.RemoveWaypoint then pcall(tt.RemoveWaypoint, tt, searchUid) end
     -- eigener Absender: der Abgleich räumt nur Punkte mit from = "Roadbook" auf
     local ok, uid = pcall(tt.AddWaypoint, tt, r.map, r.x / 100, r.y / 100,
@@ -469,6 +515,10 @@ function ns.GoToNpc(r)
     searchUid = ok and uid or nil
     ns.Print((L["Waypoint set: %s (%s %.1f %.1f)."]):format(r.name, r.zone, r.x, r.y))
     ns.Log("I", "search", "Waypoint to NPC %d (%s) at %d %.1f %.1f", r.id, r.name, r.map, r.x, r.y)
+    if searchUid then
+        goal = { r = r, step = { key = "search", map = r.map, x = r.x, y = r.y, title = r.name } }
+        routeGoal()
+    end
 end
 
 function ns.AddNpcStep(r)

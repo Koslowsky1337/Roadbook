@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- NPC search, “Show the way”: the way now uses flights, zeppelins, teleports and zone crossings like a plan step does. The arrow points to the flight master or crossing first and moves on by itself.
+- Zone crossings are only learned while you move yourself, not while a boat carries you.
+
 ## 1.5.2
 
 - NPC search: clicking a category no longer stutters. Spawn points are read once and remembered, object names are read while the index is built, and the path search checks fewer candidates. The terrain map, the search index and the spawn points of everything listed in a category are now prepared in the background after login, a few milliseconds per frame and paused in combat, so opening the search no longer stutters.

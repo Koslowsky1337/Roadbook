@@ -661,7 +661,9 @@ function ns.InitTomTom()
 end
 
 -- Hat TomTom diesen Punkt noch?
-local function uidAlive(tt, uid)
+local uidAlive
+function ns.UidAlive(tt, uid) return uidAlive(tt, uid) end
+function uidAlive(tt, uid)
     if not (tt and type(tt.waypoints) == "table") then return true end
     local entries = tt.waypoints[uid[1]]
     if type(entries) ~= "table" then return false end
@@ -1806,6 +1808,7 @@ do
             ns.Safe("travel", ns.CheckRiding)
             ns.Safe("travel", ns.CheckTravel)
             ns.Safe("travel", ns.CheckNewTaxi)
+            if ns.CheckSearchGoal then ns.Safe("travel", ns.CheckSearchGoal) end
         end
     end)
     ns.travelTicker = ticker
@@ -2515,7 +2518,10 @@ function ns.CheckCrossing()
     if ns.staging then return end
     local here = ns.PlayerPos()
     local zone = here and isZone(here.map) and here.map or nil
+    -- nur wenn du selbst läufst oder reitest: auf einem Schiff stehst du (Tempo 0) und wirst getragen
+    local speed = GetUnitSpeed and num((GetUnitSpeed("player")))
     if zone and crossZone and zone ~= crossZone and crossSpot and here.c == crossSpot.c and dist(here, crossSpot) < 200
+       and (speed == nil or speed > 0)
        and not (UnitOnTaxi and UnitOnTaxi("player")) and not ns.wp.riding then
         ns.LearnCrossing(crossZone, zone, here)
     end
