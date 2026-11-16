@@ -1101,10 +1101,22 @@ function ns.RecordTaxi()
         local okId, mapID = pcall(GetTaxiMapID)
         local ok, nodes = pcall(C_TaxiMap.GetAllTaxiNodes, okId and mapID or 0)
         if ok and type(nodes) == "table" then
+            -- Die Flugkarte sagt verlässlich, was von hier aus geht: Zustand 0 = dieser Flugmeister,
+            -- 1 = erreichbar, 2 = bekannt, aber von hier nicht erreichbar. Das merkt sich Roadbook
+            -- je Flugmeister (taxiReach / taxiBlock) und plant Flüge nur über echte Verbindungen.
+            local src, reach, block = nil, {}, {}
             for _, n in ipairs(nodes) do
                 local st, id = num(n.state), num(n.nodeID)
                 if id and (st == 0 or st == 1) and not set[id] then set[id] = true; added = added + 1 end
+                if id and st == 0 then src = id end
+                if id and st == 1 then reach[id] = true end
+                if id and st == 2 then block[id] = true end
             end
+            ns.C.taxiReach = type(ns.C.taxiReach) == "table" and ns.C.taxiReach or {}
+            ns.C.taxiBlock = type(ns.C.taxiBlock) == "table" and ns.C.taxiBlock or {}
+            -- ein neu gelernter Flugpunkt kann alte Lücken schließen: „nicht erreichbar“ gilt dann nicht mehr
+            if added > 0 then ns.C.taxiBlock = {} end
+            if src then ns.C.taxiReach[src], ns.C.taxiBlock[src] = reach, block end
             -- Auf diesem Kontinent ist die Liste jetzt vollständig: was fehlt, ist wirklich unbekannt
             local here = ns.PlayerPos()
             local cont = here and continentMap(here.map)
@@ -1325,9 +1337,11 @@ end
 -- Flugnetz: welche Flugpunkte direkt verbunden sind und wie lang die Strecke wirklich ist.
 -- Quelle: OpenMap (Data/Forever/FlightData.lua, „paths“), MIT-Lizenz, Copyright (c) 2026
 -- OpenMap contributors – siehe LICENSES/OpenMap.txt. Je Strecke: von, nach, Länge in Yards
--- (Flugpunkt-Nummern wie im Spiel). Geflogen wird über bekannte Flugpunkte; die Flugzeit ist
--- die Summe der Strecken. Fehlt ein Flugpunkt im Netz oder gibt es keine Verbindung über
--- bekannte Punkte, gilt wie bisher die Luftlinie.
+-- (Flugpunkt-Nummern wie im Spiel). Geflogen wird nur über bekannte Flugpunkte; die Flugzeit
+-- ist die Summe der Strecken. Gibt es über deine bekannten Punkte keine Verbindung, wird der
+-- Flug nicht vorgeschlagen. Was die Flugkarte beim Flugmeister selbst gezeigt hat (erreichbar
+-- oder nicht, siehe ns.RecordTaxi), geht dem Netz vor. Flugpunkte, die im Netz fehlen, zählen
+-- mit der Luftlinie.
 ---------------------------------------------------------------------------
 local PATH_SPEED = 30   -- Yards/s auf der Strecke (gemessen: Crossroads → Ratchet, 1535 Yards in 52 s)
 local FLIGHT_PATHS = {
@@ -1374,7 +1388,7 @@ function ns.SetFlightPaths(list)
     flightPaths, flightGraph, flightCache = list, nil, {}
 end
 
--- Flugzeit in Sekunden von Flugpunkt A nach B (ohne Start und Landung)
+-- Flugzeit in Sekunden von Flugpunkt A nach B (ohne Start und Landung); nil = keine Verbindung
 local function flyTime(A, B)
     if not flightGraph then
         flightGraph = {}
@@ -1387,6 +1401,10 @@ local function flyTime(A, B)
     end
     local a, b = A.id, B.id
     local air = dist(A, B) / FLY_SPEED
+    local seen = a and b and type(ns.C.taxiReach) == "table" and ns.C.taxiReach[a]
+    local blocked = a and b and type(ns.C.taxiBlock) == "table" and ns.C.taxiBlock[a]
+    if blocked and blocked[b] then return nil end   -- die Flugkarte dort hat es gezeigt
+    seen = seen and seen[b]
     if not (a and b and flightGraph[a] and flightGraph[b]) then return air end
     if flightCache.ver ~= ns.taxiVersion then flightCache = { ver = ns.taxiVersion } end
     local D = flightCache[a]
@@ -1409,7 +1427,8 @@ local function flyTime(A, B)
         end
         flightCache[a] = D
     end
-    return D[b] and D[b] / PATH_SPEED or air
+    if D[b] then return D[b] / PATH_SPEED end
+    return seen and air or nil   -- im Netz nicht verbunden: nur, wenn die Flugkarte es anders gezeigt hat
 end
 ns.FlyTime = flyTime
 
@@ -1423,7 +1442,8 @@ local function sameContinent(a, b)
     local function try(A)
         for _, B in ipairs(nb) do
             if A.node ~= B.node then
-                local t = A.t + FLY_OVERHEAD + flyTime(A.node, B.node) + B.t
+                local fly = flyTime(A.node, B.node)
+                local t = fly and (A.t + FLY_OVERHEAD + fly + B.t) or math.huge
                 if t < best then
                     best, how, via = t, "flug", { from = A.node, to = B.node, walkTo = A.t, walkFrom = B.t, new = A.new }
                 end
@@ -1702,7 +1722,7 @@ local function hopCost(from, to, hop)
     if not start or start.c ~= from.c then return math.huge end
     if hop.kind == "neu" then return walkTime(from, hop.node) + (ns.LegCost(hop.node, to) or NO_LINK) end
     if hop.kind == "flug" then
-        return walkTime(from, hop.from) + FLY_OVERHEAD + flyTime(hop.from, hop.to) + (ns.LegCost(hop.to, to) or NO_LINK)
+        return walkTime(from, hop.from) + FLY_OVERHEAD + (flyTime(hop.from, hop.to) or math.huge) + (ns.LegCost(hop.to, to) or NO_LINK)
     end
     return walkTime(from, hop.dock) + (ns.LegCost(hop.dock, to) or NO_LINK)
 end

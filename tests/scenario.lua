@@ -1111,7 +1111,24 @@ do
     check(ns.FlyTime(n1, n3) == 200, "Flugzeit über die echte Strecke (6000 Yards): " .. tostring(ns.FlyTime(n1, n3)))
     ns.C.taxi = { [1] = true, [3] = true }
     ns.taxiVersion = ns.taxiVersion + 1
-    check(math.abs(ns.FlyTime(n1, n3) - 2000 / 28) < 0.01, "Zwischenhalt unbekannt: Luftlinie wie bisher")
+    check(ns.FlyTime(n1, n3) == nil, "Zwischenhalt unbekannt: keine Verbindung, kein Flug")
+    -- was die Flugkarte beim Flugmeister gezeigt hat, geht dem Netz vor
+    local realAll, realId = C_TaxiMap.GetAllTaxiNodes, GetTaxiMapID
+    GetTaxiMapID = function() return 9000 end
+    C_TaxiMap.GetAllTaxiNodes = function() return { { nodeID = 1, state = 0 }, { nodeID = 3, state = 1 } } end
+    ns.RecordTaxi()
+    check(ns.C.taxiReach[1][3] and math.abs(ns.FlyTime(n1, n3) - 2000 / 28) < 0.01, "Flugkarte zeigt die Verbindung: Flug erlaubt")
+    ns.C.taxi[2] = true
+    C_TaxiMap.GetAllTaxiNodes = function() return { { nodeID = 1, state = 0 }, { nodeID = 2, state = 1 }, { nodeID = 3, state = 2 } } end
+    ns.RecordTaxi()
+    check(ns.FlyTime(n1, n3) == nil and ns.FlyTime(n1, n2) == 100, "Flugkarte zeigt „nicht erreichbar“: kein Flug, auch wenn das Netz ihn kennt")
+    C_TaxiMap.GetAllTaxiNodes = function() return { { nodeID = 1, state = 0 }, { nodeID = 2, state = 1 }, { nodeID = 3, state = 2 }, { nodeID = 4, state = 1 } } end
+    ns.RecordTaxi()
+    check(next(ns.C.taxiBlock[1]) ~= nil and ns.C.taxi[4], "Neuer Flugpunkt gelernt: frische Liste für diesen Flugmeister")
+    C_TaxiMap.GetAllTaxiNodes, GetTaxiMapID = realAll, realId
+    ns.C.taxiReach, ns.C.taxiBlock = nil, nil
+    ns.C.taxi = { [1] = true, [3] = true }
+    ns.taxiVersion = ns.taxiVersion + 1
     check(math.abs(ns.FlyTime(n1, { id = 99, c = 1, x = 2800, y = 0 }) - 100) < 0.01, "Flugpunkt nicht im Netz: Luftlinie")
     ns.C.taxi = keep
     ns.SetFlightPaths({})

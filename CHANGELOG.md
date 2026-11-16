@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Flights are only suggested where a connection really exists: over the flight paths between the flight points you know, and by what the flight map showed at each flight master (reachable or not). Knowing both ends is no longer enough.
+
 ## 1.6.0
 
 - Flights are timed by the real length of the flight paths over the flight points you know, not by the straight line.
