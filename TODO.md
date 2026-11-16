@@ -54,6 +54,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Gelände: `/rb log` zeigt „Terrain map ready: N fields, N ms“ – wie lange dauert es, ruckelt es beim Einloggen? Stimmt die Reihenfolge einer Runde über einen Berg (z. B. Mulgore – Steinkrallengebirge, Brachland – Tausend Nadeln) besser als vorher?
 - [ ] Übergänge: zu Fuß ein Gebiet wechseln, dann `/rb log`: steht dort „Zone crossing A > B confirmed: N yd …“? Wie groß sind die Abstände zum Leatrix-Wert? Werden auch Städte (Orgrimmar – Durotar) erkannt?
 - [ ] Pfeil zum Übergang: Ziel hinter einem Gebirge im Nachbargebiet wählen. Zeigt der Tracker „Erst zum Übergang nach …“ und der Pfeil dorthin? Wechselt er nach dem Durchqueren aufs Ziel bzw. den nächsten Übergang? Liegt der Punkt wirklich am Pass?
+- [ ] NPC-Suche, Abschnitt „Orte“: Briefkasten, Schmiede, Amboss, Kochfeuer, Versammlungsstein, Mondbrunnen – steht am gezeigten Punkt wirklich einer? Werden Briefkästen der anderen Fraktion ausgeblendet? Textsuche „Kupferader“ findet Fundorte.
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
 - [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 

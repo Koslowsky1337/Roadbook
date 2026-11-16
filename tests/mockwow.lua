@@ -251,6 +251,7 @@ NpcDB = DB({
     [3008] = { name = "Mulgore-Händler", subName = "Reagenzien", npcFlags = 4, friendlyToFaction = "H", spawns = { [406] = { { 40, 40 } } } },
     [3009] = { name = "Schneidermeisterin", raw_subName = "Expert Tailor", npcFlags = 16, spawns = { [17] = { { 30, 60 } } } },
     [3010] = { name = "Angler", raw_subName = "Fisherman", npcFlags = 16, spawns = { [17] = { { 57, 21 } } } },
+    [3011] = { name = "Allianz-Wirt", npcFlags = 128, friendlyToFaction = "A", spawns = { [406] = { { 40.3, 40.3 } } } },
     [3007] = { name = "Händler ohne Ort", npcFlags = 4, spawns = { [2437] = { { -1, -1 } } } },
 })
 ItemDB = DB({ [16083] = { name = "Angelbuch", vendors = { 3002 } } })
@@ -258,7 +259,12 @@ ItemDB = DB({ [16083] = { name = "Angelbuch", vendors = { 3002 } } })
 SKILLS = {}
 GetProfessions = function() local t = {}; for i = 1, #SKILLS do t[i] = i end; return unpack(t) end
 GetProfessionInfo = function(i) local s = SKILLS[i]; return s.name, nil, s.rank, s.max, nil, nil, s.line end
-ObjectDB = DB({ [4141] = { name = "Steuerkonsole", spawns = { [17] = { { 52.4, 11.65 } } } } })
+ObjectDB = DB({ [4141] = { name = "Steuerkonsole", spawns = { [17] = { { 52.4, 11.65 } } } },
+    -- für die Suche nach Orten: ein Briefkasten bei den Händlern, einer in Mulgore, eine Erzader
+    [5001] = { name = "Briefkasten", raw_name = "Mailbox", spawns = { [17] = { { 57.5, 21.5 } } } },
+    [5002] = { name = "Briefkasten", raw_name = "Mailbox", spawns = { [406] = { { 40.2, 40.2 } } } },
+    [5003] = { name = "Kupferader", raw_name = "Copper Vein", spawns = { [17] = { { 10, 10 }, { 56, 22 } } } },
+    [5004] = { name = "Zwergenlagerfeuer", raw_name = "Dwarven Campfire", spawns = { [17] = { { 55, 20 } } } } })
 LibQuestieDB = { Support = { Get = function(n)
     if n == "ZoneDB" then return { private = { areaIdToUiMapId = "return { [17] = 1413, [406] = 1442, [215] = 1412 }",
                                                areaIdToUiMapIdOverride = "return { }" } } end

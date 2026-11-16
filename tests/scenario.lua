@@ -1050,6 +1050,23 @@ check(not ns.versionNotified and ns.DB.newerVersion == nil, "Nach drei Tagen ohn
 ns.VERSION, GetTime, IN_GUILD = realVersion, realGetTime, false
 check(#ERRORS_FORWARDED == errBase8, "Keine Lua-Fehler im Versionshinweis: " .. joined(ERRORS_FORWARDED))
 
+-- Orte: Briefkästen und andere Objekte aus QuestieDB
+PLAYER = { map = 1413, x = 0.576, y = 0.213 }
+local mb = ns.FindNpcs({ cat = cat("mailbox") })
+check(mb and #mb == 1 and mb[1].name == "Briefkasten" and mb[1].obj and mb[1].x == 57.5 and not mb[1].unfit,
+      "Briefkasten gefunden; der am Allianz-Gasthaus fehlt: " .. tostring(mb and #mb))
+ns.SearchOpt().otherFaction = true
+mb = ns.FindNpcs({ cat = cat("mailbox") })
+check(mb and #mb == 2 and mb[2].unfit, "Mit der Option: auch der Briefkasten der anderen Fraktion, markiert")
+ns.SearchOpt().otherFaction = nil
+local fire = ns.FindNpcs({ cat = cat("fire") })
+check(fire and #fire == 1 and fire[1].name == "Zwergenlagerfeuer", "Kochfeuer über das letzte Wort des englischen Namens")
+check(not ns.FindNpcs({ cat = cat("anvil") }), "Kein Amboss in den Daten: nichts gefunden")
+local vein = ns.FindNpcs({ text = "kupfer" })
+check(vein and vein[1].name == "Kupferader" and vein[1].x == 56, "Textsuche findet Objekte am nächsten Fundort")
+local onlyNpc = true
+for _, r in ipairs(ns.FindNpcs({ cat = cat("vendor") }) or {}) do if r.obj then onlyNpc = false end end
+check(onlyNpc, "NPC-Kategorien enthalten keine Objekte")
 -- EP der Abgaben
 ns.C.plans["p950"] = { id = "p950", title = "EP", mode = "route", created = 10, steps = {
     { type = "turnin", quest = 6401, map = 1413, x = 50, y = 50, title = "Abgabe" },

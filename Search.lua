@@ -22,6 +22,14 @@ local CATS = {
     { key = "auction", label = L["Auctioneer"], flag = 4096 },
     { key = "flight", label = L["Flight master"], flag = 8 },
     { key = "stable", label = L["Stable master"], flag = 8192 },
+    -- Objekte aus QuestieDB: „objects“ sind englische Grundnamen (ganz oder als letztes Wort)
+    { head = L["Places"] },
+    { key = "mailbox", label = L["Mailbox"], objects = { "mailbox" } },
+    { key = "forge", label = L["Forge"], objects = { "forge" } },
+    { key = "anvil", label = L["Anvil"], objects = { "anvil" } },
+    { key = "fire", label = L["Cooking fire"], objects = { "campfire", "cooking fire", "stove", "bonfire", "cozy fire" } },
+    { key = "stone", label = L["Meeting stone"], objects = { "meeting stone" } },
+    { key = "moonwell", label = L["Moonwell"], objects = { "moonwell" } },
     { head = L["Trainers"] },
     { key = "class", label = L["Class trainer"], flag = TRAINER, class = true },
     { key = "pet", label = L["Pet trainer"], flag = TRAINER, titles = { "pet trainer" }, only = "HUNTER" },
@@ -73,7 +81,8 @@ local function findCategory(text)
 end
 
 ---------------------------------------------------------------------------
--- Verzeichnis aller NPCs (Name, Flags). Wird beim ersten Öffnen des Reiters
+-- Verzeichnis aller NPCs (Name, Flags) und dahinter aller Objekte (Briefkästen,
+-- Schmieden, Erzadern …; idx.obj). Wird beim ersten Öffnen des Reiters
 -- häppchenweise aufgebaut, damit das Spiel nicht ruckt; eine Suche vor dem
 -- Ende liest den Rest in einem Zug.
 ---------------------------------------------------------------------------
@@ -85,24 +94,31 @@ local function hasDB() return _G.NpcDB and NpcDB.Get and NpcDB.GetAllIds end
 local function indexStep(all)
     if not idx then
         local ok, ids = pcall(NpcDB.GetAllIds)
-        idx = { src = (ok and type(ids) == "table") and ids or {}, pos = 0, ids = {}, names = {}, subs = {}, flags = {} }
+        idx = { src = (ok and type(ids) == "table") and ids or {}, pos = 0, ids = {}, names = {}, subs = {}, flags = {}, obj = {} }
+        idx.npcs = #idx.src
+        local ODB = _G.ObjectDB
+        local ok2, oids = pcall(ODB and ODB.GetAllIds or error)
+        for _, id in ipairs(ok2 and type(oids) == "table" and oids or {}) do idx.src[#idx.src + 1] = id end
     end
     local last = all and #idx.src or math.min(#idx.src, idx.pos + CHUNK)
     for i = idx.pos + 1, last do
         local id = idx.src[i]
-        local name = NpcDB.Get(id, "name")
+        local isObj = i > idx.npcs
+        local db = isObj and ObjectDB or NpcDB
+        local name = db.Get(id, "name")
         if type(name) == "string" and name ~= "" then
             local n = #idx.ids + 1
-            local sub = NpcDB.Get(id, "subName")
-            idx.ids[n], idx.names[n], idx.flags[n] = id, name:lower(), tonumber(NpcDB.Get(id, "npcFlags")) or 0
+            local sub = not isObj and NpcDB.Get(id, "subName")
+            idx.ids[n], idx.names[n], idx.flags[n] = id, name:lower(), not isObj and tonumber(NpcDB.Get(id, "npcFlags")) or 0
             idx.subs[n] = type(sub) == "string" and sub:lower() or ""
+            idx.obj[n] = isObj or nil
         end
     end
     idx.pos = last
     idx.done = last >= #idx.src
     if idx.done and not idx.logged then
         idx.logged = true
-        ns.Log("I", "search", "NPC index ready: %d NPCs", #idx.ids)
+        ns.Log("I", "search", "NPC index ready: %d NPCs and objects", #idx.ids)
     end
     return idx.done
 end
@@ -133,8 +149,28 @@ end
 
 local function hasFlag(flags, f) return flags % (f * 2) >= f end
 
+-- Englischer Grundname eines Objekts (klein), damit die Kategorie in jeder Client-Sprache gilt
+local objNames = {}
+local function rawObjName(id)
+    local n = objNames[id]
+    if n == nil then
+        local ok, v = pcall(ObjectDB.GetRaw or ObjectDB.Get, id, "name")
+        n = (ok and type(v) == "string") and v:lower() or ""
+        objNames[id] = n
+    end
+    return n
+end
+
 local function inCategory(cat, i)
-    if not hasFlag(idx.flags[i], cat.flag) then return false end
+    if cat.objects then
+        if not idx.obj[i] then return false end
+        local n = rawObjName(idx.ids[i])
+        for _, o in ipairs(cat.objects) do
+            if n == o or n:sub(-#o - 1) == " " .. o then return true end
+        end
+        return false
+    end
+    if idx.obj[i] or not hasFlag(idx.flags[i], cat.flag) then return false end
     local t = rawTitle(idx.ids[i])
     if cat.class then
         if not ns.SearchOpt().allClasses then return t:find(playerClass():lower() .. " trainer", 1, true) ~= nil end
@@ -216,8 +252,8 @@ end
 
 -- Nächster Fundort eines NPCs nach Luftlinie (anderer Kontinent: weit hinten);
 -- mit „place“ zählen nur Fundorte in Gebieten, deren Name diesen Text enthält
-local function nearestSpawn(id, here, place)
-    local spawns = NpcDB.Get(id, "spawns")
+local function nearestSpawn(id, here, place, db)
+    local spawns = (db or NpcDB).Get(id, "spawns")
     local best, bestD
     for area, list in pairs(type(spawns) == "table" and spawns or {}) do
         local map = ns.AreaToUiMap(area)
@@ -240,6 +276,39 @@ local function nearestSpawn(id, here, place)
         end
     end
     return best, bestD
+end
+
+-- Objekte haben keine Fraktion. Steht ein Gastwirt in der Nähe (Briefkästen stehen fast immer
+-- am Gasthaus), gilt dessen Fraktion; ohne Gastwirt in der Nähe gilt das Objekt als passend.
+local INN_RANGE = 80
+local inns
+local function objUnfit(spot, faction)
+    if not inns then
+        inns = {}
+        for i = 1, #idx.ids do
+            if not idx.obj[i] and hasFlag(idx.flags[i], 128) then
+                local id = idx.ids[i]
+                local friendly = NpcDB.Get(id, "friendlyToFaction")
+                local spawns = NpcDB.Get(id, "spawns")
+                for area, list in pairs(type(spawns) == "table" and spawns or {}) do
+                    local map = ns.AreaToUiMap(area)
+                    for _, xy in ipairs(map and type(list) == "table" and list or {}) do
+                        local p = type(xy[1]) == "number" and type(xy[2]) == "number" and ns.WorldPos(map, xy[1], xy[2], true)
+                        if p then inns[#inns + 1] = { c = p.c, x = p.x, y = p.y, friendly = type(friendly) == "string" and friendly or "" } end
+                    end
+                end
+            end
+        end
+    end
+    local best, bestD
+    for _, inn in ipairs(inns) do
+        if inn.c == spot.p.c then
+            local dx, dy = inn.x - spot.p.x, inn.y - spot.p.y
+            local d = math.sqrt(dx * dx + dy * dy)
+            if d < INN_RANGE and (not bestD or d < bestD) then best, bestD = inn, d end
+        end
+    end
+    if best and best.friendly ~= "" and not best.friendly:find(faction, 1, true) then return L["other faction"] end
 end
 
 local MAX_TEXT_HITS = 300   -- Namenssuche: so viele NPCs werden höchstens auf Fundorte geprüft
@@ -270,12 +339,17 @@ function ns.FindNpcs(query, limit)
     local _, myMax = nil, nil
     if cat and cat.skill then _, myMax = ns.PlayerSkill(cat.skill) end
     local cands, hits = {}, 0
-    local function add(id, book)
-        local spot, d = nearestSpawn(id, here, place)
+    local function add(id, book, obj)
+        local spot, d = nearestSpawn(id, here, place, obj and ObjectDB)
         if not spot then return end
-        local cap = cat and not book and teachCap(id, cat) or nil
+        local bad
+        if obj then
+            bad = objUnfit(spot, faction)
+            if bad and cat and not otherFaction then return end
+        end
+        local cap = cat and not book and not obj and teachCap(id, cat) or nil
         local low = (cap and myMax and cap <= myMax) or nil
-        cands[#cands + 1] = { id = id, spot = spot, d = d, cap = cap, low = low, book = book,
+        cands[#cands + 1] = { id = id, spot = spot, d = d, cap = cap, low = low, book = book, obj = obj, unfit = bad,
                               rank = book and 0 or (low and 2 or 1) }
     end
     -- Kochen, Erste Hilfe, Angeln: ab 150 steht die nächste Stufe in einem Buch beim
@@ -301,12 +375,12 @@ function ns.FindNpcs(query, limit)
             ok = idx.names[i]:find(text, 1, true) ~= nil or idx.subs[i]:find(text, 1, true) ~= nil
         else
             ok = inCategory(query.cat, i)
-                and (otherFaction or unfit(id, faction) ~= L["other faction"])
+                and (idx.obj[i] or otherFaction or unfit(id, faction) ~= L["other faction"])
         end
         if ok then
             hits = hits + 1
             if hits > MAX_TEXT_HITS and text then break end
-            add(id)
+            add(id, nil, idx.obj[i])
         end
     end
     table.sort(cands, function(a, b)
@@ -319,11 +393,13 @@ function ns.FindNpcs(query, limit)
     for i = 1, math.min(math.max(SHORTLIST, want + 4), #cands) do
         local c = cands[i]
         local info = C_Map.GetMapInfo and C_Map.GetMapInfo(c.spot.map)
-        local sub = NpcDB.Get(c.id, "subName")
+        local sub = not c.obj and NpcDB.Get(c.id, "subName")
+        local unfitWhy = c.unfit
+        if not c.obj then unfitWhy = unfit(c.id, faction) end
         out[#out + 1] = {
-            id = c.id, name = NpcDB.Get(c.id, "name"), sub = type(sub) == "string" and sub or nil,
-            map = c.spot.map, x = c.spot.x, y = c.spot.y, zone = info and info.name or "?",
-            cost = ns.LegCost(here, c.spot.p) or 1e9, unfit = unfit(c.id, faction),
+            id = c.id, name = (c.obj and ObjectDB or NpcDB).Get(c.id, "name"), sub = type(sub) == "string" and sub or nil,
+            map = c.spot.map, x = c.spot.x, y = c.spot.y, zone = info and info.name or "?", obj = c.obj,
+            cost = ns.LegCost(here, c.spot.p) or 1e9, unfit = unfitWhy,
             cap = c.cap, low = c.low, book = c.book, rank = c.rank,
         }
     end
