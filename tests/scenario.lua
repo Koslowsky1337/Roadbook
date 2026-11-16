@@ -1077,6 +1077,20 @@ check(vein and vein[1].name == "Kupferader" and vein[1].x == 56, "Textsuche find
 local onlyNpc = true
 for _, r in ipairs(ns.FindNpcs({ cat = cat("vendor") }) or {}) do if r.obj then onlyNpc = false end end
 check(onlyNpc, "NPC-Kategorien enthalten keine Objekte")
+-- Hintergrundarbeit in Scheiben: mit Uhr viele Stücke je Bild, im Kampf Pause
+do
+    local now, steps, finished = 0, 0, false
+    debugprofilestop = function() return now end
+    ns.RunSliced(function() steps = steps + 1; now = now + 1; return steps >= 10 end, function() finished = true end)
+    check(steps == 4 and not finished, "Zeitbudget: nach gut 3 ms ist für dieses Bild Schluss (" .. steps .. " Stücke)")
+    COMBAT = true
+    RunTimers()
+    check(steps == 4, "Im Kampf pausiert die Hintergrundarbeit")
+    COMBAT = false
+    RunTimers()
+    check(steps == 10 and finished, "Danach läuft sie zu Ende: " .. steps)
+    debugprofilestop = nil
+end
 -- EP der Abgaben
 ns.C.plans["p950"] = { id = "p950", title = "EP", mode = "route", created = 10, steps = {
     { type = "turnin", quest = 6401, map = 1413, x = 50, y = 50, title = "Abgabe" },

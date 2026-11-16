@@ -86,7 +86,7 @@ end
 -- häppchenweise aufgebaut, damit das Spiel nicht ruckt; eine Suche vor dem
 -- Ende liest den Rest in einem Zug.
 ---------------------------------------------------------------------------
-local CHUNK = 400
+local CHUNK = debugprofilestop and 10 or 400   -- je Stück; ns.RunSliced misst die Zeit
 local idx
 
 local function hasDB() return _G.NpcDB and NpcDB.Get and NpcDB.GetAllIds end
@@ -129,16 +129,12 @@ end
 
 function ns.BuildNpcIndex()
     if not hasDB() or (idx and (idx.done or idx.running)) then return end
-    local function tick()
-        if indexStep() then
-            idx.running = nil
-            if ns.WarmSpawns then ns.WarmSpawns() end
-        else
-            idx.running = true
-            C_Timer.After(0.02, tick)
-        end
-    end
-    tick()
+    indexStep()
+    idx.running = true
+    ns.RunSliced(function() return indexStep() end, function()
+        idx.running = nil
+        if ns.WarmSpawns then ns.WarmSpawns() end
+    end)
 end
 
 local titleCache = {}
@@ -291,7 +287,7 @@ end
 -- was in einer Kategorie vorkommt (Händler, Lehrer, Briefkästen …), in kleinen Portionen. Ein Klick
 -- muss dann nur noch nach deinem Standort sortieren. Alle 190.000 Fundorte der Datenbank zu laden
 -- würde dagegen viel Speicher kosten; was nur die Textsuche trifft, wird beim ersten Treffer gemerkt.
-local WARM_CHUNK = 40
+local WARM_CHUNK = debugprofilestop and 4 or 40
 local SERVICE_FLAGS = { 4, 8, 16, 128, 256, 4096, 8192, 16384 }
 function ns.WarmSpawns()
     if not (idx and idx.done) or idx.warm then return end
@@ -299,7 +295,7 @@ function ns.WarmSpawns()
     local objCats = {}
     for _, c in ipairs(CATS) do if c.objects then objCats[#objCats + 1] = c end end
     local t0, n = debugprofilestop and debugprofilestop() or 0, 0
-    local function tick()
+    ns.RunSliced(function()
         local my, budget = idx, WARM_CHUNK
         while budget > 0 and my.warm < #my.ids do
             my.warm = my.warm + 1
@@ -314,14 +310,11 @@ function ns.WarmSpawns()
                 budget, n = budget - 1, n + 1
             end
         end
-        if my.warm < #my.ids then
-            C_Timer.After(0.02, tick)
-        else
-            ns.Log("I", "search", "Spawn points preloaded for %d NPCs and objects, %d ms",
-                n, (debugprofilestop and debugprofilestop() or 0) - t0)
-        end
-    end
-    tick()
+        if my.warm < #my.ids then return false end
+        ns.Log("I", "search", "Spawn points preloaded for %d NPCs and objects, %d ms",
+            n, (debugprofilestop and debugprofilestop() or 0) - t0)
+        return true
+    end)
 end
 
 -- Objekte haben keine Fraktion. Steht ein Gastwirt in der Nähe (Briefkästen stehen fast immer

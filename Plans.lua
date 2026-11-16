@@ -1801,7 +1801,7 @@ do
         if acc < 2 then return end
         acc = 0
         if ns.C and ns.Safe then
-            ns.Safe("travel", ns.BuildGrid)
+            ns.Safe("travel", ns.Background)
             ns.Safe("travel", ns.CheckCrossing)
             ns.Safe("travel", ns.CheckRiding)
             ns.Safe("travel", ns.CheckTravel)
@@ -2064,10 +2064,29 @@ ns.AreaToUiMap = areaToUiMap
 -- Ohne Verbindung, außerhalb des Rasters oder abgeschaltet: Luftlinie wie bisher.
 -- Feste Werte je Gebiet gibt es nicht; es gelten nur diese vier Zahlen für alles.
 ---------------------------------------------------------------------------
+-- Hintergrundarbeit in Scheiben: je Bild höchstens SLICE_MS Millisekunden, im Kampf Pause.
+-- „step“ erledigt ein kleines Stück und liefert true, wenn alles fertig ist.
+local SLICE_MS = 3
+function ns.RunSliced(step, done)
+    local function tick()
+        if InCombatLockdown and InCombatLockdown() then C_Timer.After(1, tick) return end
+        local clock = debugprofilestop
+        local t0 = clock and clock() or 0
+        repeat
+            if step() then
+                if done then done() end
+                return
+            end
+        until not clock or clock() - t0 > SLICE_MS
+        C_Timer.After(0, tick)
+    end
+    tick()
+end
+
 local CELL = 80            -- Yards je Rasterfeld
 local GRID_NODES = 2000    -- mehr Felder untersucht die Wegsuche nicht (dann Luftlinie)
 local GRID_CAP = 2.5       -- ein Umweg zählt höchstens als das 2,5-fache der Luftlinie
-local GRID_SLICE = 1500    -- so viele NPCs/Objekte je Durchgang einlesen (kein Ruckeln)
+local GRID_SLICE = debugprofilestop and 20 or 1500   -- NPCs/Objekte je Stück (ns.RunSliced misst die Zeit)
 local grid = { cells = {}, cache = {}, cached = 0 }
 
 local function cellOf(p) return (math.floor(p.x / CELL) + 512) * 2048 + math.floor(p.y / CELL) + 1024 end
@@ -2112,7 +2131,7 @@ function ns.BuildGrid()
                     ns.Log("I", "route", "Terrain map ready: %d fields, %d ms", count,
                         debugprofilestop and (debugprofilestop() - t0) or 0)
                     if ns.ScheduleRefresh then ns.ScheduleRefresh() end
-                    return
+                    return true
                 end
                 local ok, list = pcall(db.GetAllIds)
                 ids, i = ok and type(list) == "table" and list or {}, 0
@@ -2143,9 +2162,21 @@ function ns.BuildGrid()
                 end
             end
         end
-        if my == grid then C_Timer.After(0.05, slice) end
+        return my ~= grid   -- Raster wurde verworfen: aufhören
     end
-    slice()
+    ns.RunSliced(slice)
+end
+
+function ns.GridReady() return grid.ready and true or false end
+
+-- Zehn Sekunden nach dem Login im Hintergrund: erst das Geländeraster, dann das Verzeichnis
+-- der NPC-Suche samt Fundorten. So ist beim ersten Öffnen alles schon da.
+local bgStart
+function ns.Background()
+    bgStart = bgStart or GetTime()
+    if GetTime() - bgStart < 10 then return end
+    ns.BuildGrid()
+    if grid.ready and ns.BuildNpcIndex then ns.BuildNpcIndex() end
 end
 
 -- Ein bekanntes Feld an oder direkt neben dem Punkt (nil: außerhalb des Rasters)
