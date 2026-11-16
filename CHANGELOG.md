@@ -5,7 +5,7 @@
 - Mages: your teleports are travel legs now. If a teleport gets you there faster, the tracker says so (needs a Rune of Teleportation).
 - Hearthstone as a travel leg when it is ready and saves at least 15 minutes (adjustable). Roadbook learns where it leads when you set your home or use the stone once.
 - Group: a mage with Roadbook shares their known portals invisibly with the group; the others get the tip to ask for a portal when it saves at least 10 minutes (adjustable). A warlock in the group who is much closer to your destination is suggested for a summon.
-- Plans: each open turn-in shows its XP, and the plan shows the sum and its share of your current level. Can be switched off in the options.
+- Plans: each open turn-in shows its XP, and the plan and the tracker show the sum and its share of your current level; skipped steps do not count. Can be switched off in the options.
 - The Roadbook window is wider, so step titles and places are no longer cut off as early.
 - Options: all four can be switched off separately, including sharing your own portals.
 

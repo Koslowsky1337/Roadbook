@@ -1057,6 +1057,13 @@ ns.C.plans["p950"] = { id = "p950", title = "EP", mode = "route", created = 10, 
 QS.onQuest[6401], QS.complete[6401], QUEST_XP[6401] = true, true, 1250
 local xpSum, xpShare = ns.PlanXP(ns.GetPlan("e:p950"))
 check(ns.QuestXP(6401) == 1250 and ns.QuestXP(6541) == nil and xpSum == 1250 and xpShare == 25, "EP je Abgabe und Summe mit Anteil an der Stufe")
+ns.ActivatePlan("e:p950"); RunTimers(); ns.UpdateTracker()
+check(ns.tracker.xpLine:IsShown() and ns.tracker.xpLine:GetText() == "+1250 EP · noch 1250 EP im Plan (25%)",
+      "Tracker zeigt die EP: " .. tostring(ns.tracker.xpLine:GetText()))
+ns.ToggleSkip(ns.GetPlan("e:p950"), ns.GetPlan("e:p950").steps[1]); RunTimers(); ns.UpdateTracker()
+check(not ns.tracker.xpLine:IsShown(), "Übersprungene Abgabe zählt nicht mit")
+ns.ToggleSkip(ns.GetPlan("e:p950"), ns.GetPlan("e:p950").steps[1]); RunTimers()
+ns.DeactivatePlan(); RunTimers()
 ns.DB.noQuestXP = true
 check(ns.QuestXP(6401) == nil and ns.PlanXP(ns.GetPlan("e:p950")) == nil, "EP-Anzeige abgeschaltet")
 ns.DB.noQuestXP = nil

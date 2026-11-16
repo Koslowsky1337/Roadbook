@@ -575,6 +575,10 @@ function ns.CreateTracker()
     f.line3:SetPoint("RIGHT", f, "RIGHT", -10, 0)
     f.line3:SetWordWrap(false)
     f.line3:Hide()
+    -- EP: aktuelle Abgabe und alle offenen Abgaben des Plans
+    f.xpLine = ns.FontString(f, "GameFontHighlightSmall")
+    f.xpLine:SetTextColor(0.69, 0.44, 1)
+    f.xpLine:SetWordWrap(false)
 
     -- Ausgeklappter Teil
     f.nextLines = {}
@@ -698,7 +702,7 @@ function ns.UpdateTracker()
     local y = -26 - 34   -- unter Zeile 1+2
     for _, fs in ipairs(f.nextLines) do fs:Hide() end
     for _, fs in ipairs(f.missLines) do fs:Hide() end
-    f.warn:Hide(); f.addBtn:Hide()
+    f.warn:Hide(); f.addBtn:Hide(); f.xpLine:Hide()
 
     local missing
     if plan then
@@ -708,6 +712,18 @@ function ns.UpdateTracker()
         local cur = ns.CurrentStep(plan)
         f.step = cur
         if ns.UpdateTrackerHint(true) then y = y - 14 end
+        -- EP der aktuellen Abgabe und der offenen Abgaben im Plan; Übersprungenes zählt nicht mit
+        local xp, share = ns.PlanXP(plan)
+        if xp then
+            local own = cur and cur.type == "turnin" and ns.QuestXP(cur.quest)
+            f.xpLine:ClearAllPoints()
+            f.xpLine:SetPoint("TOPLEFT", 10, y)
+            f.xpLine:SetPoint("RIGHT", f, "RIGHT", -10, 0)
+            f.xpLine:SetText((own and (L["+%d XP · "]):format(own) or "")
+                .. (share and L["%d XP open in the plan (%d%%)"] or L["%d XP open in the plan"]):format(xp, share))
+            f.xpLine:Show()
+            y = y - 14
+        end
         if cur then
             local state, detail = ns.StepState(cur, plan.id)
             f.line1:SetText(ns.StepTitle(cur))
