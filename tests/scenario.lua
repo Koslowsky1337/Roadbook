@@ -1111,6 +1111,28 @@ do
     ns.DB.noTerrain = true
     check(ns.WalkLen(A, B) == nil, "Abgeschaltet: Luftlinie")
     ns.DB.noTerrain = nil
+    -- Pfeil und Tracker führen erst zum Übergang
+    ns.DeactivatePlan(); RunTimers()
+    PLAYER = { map = 1413, x = 0.9, y = 0.9 }
+    ns.C.plans["p960"] = { id = "p960", title = "Nebenan", mode = "route", created = 11, steps = {
+        { type = "goto", map = 9500, x = 10, y = 90, title = "Hinterm Berg" } } }
+    ns.ActivatePlan("e:p960"); RunTimers()
+    check(ns.travel and ns.travel.hop.kind == "tor" and ns.travel.text == "Erst zum Übergang nach Nebenan"
+          and TomTom.arrowTitle == "Übergang – Nebenan" and TomTom.arrow[1] == 1413,
+          "Pfeil zeigt erst zum Übergang: " .. tostring(ns.travel and ns.travel.text) .. " / " .. tostring(TomTom.arrowTitle))
+    ns.DB.noGateHop = true
+    ns.travel = nil; ns.ResetWaypoints(true); RunTimers()
+    check(ns.travel == nil and TomTom.arrow.title == "Hinterm Berg", "Abgeschaltet: Pfeil direkt zum Ziel")
+    ns.DB.noGateHop = nil
+    PLAYER = { map = 1413, x = 0.995, y = 0.105 }
+    ns.travel = nil; ns.ResetWaypoints(true); RunTimers()
+    check(ns.travel == nil and TomTom.arrow.title == "Hinterm Berg", "Am Übergang angekommen: Pfeil zum Ziel")
+    PLAYER = { map = 9500, x = 0.01, y = 0.11 }
+    ns.travel = nil; ns.ResetWaypoints(true); RunTimers()
+    check(ns.travel == nil, "Im Zielgebiet: kein Übergang mehr")
+    ns.wp.gatePassed = nil
+    ns.DeactivatePlan(); RunTimers()
+    ns.C.plans["p960"] = nil
     -- Abgleich: Beobachtung nah am Startwert ersetzt ihn, weit weg kommt neu dazu
     ns.LearnCrossing(1413, 9500, { c = 1, x = 4000, y = 500 })
     local lastLog = ns.DB.log[#ns.DB.log].m

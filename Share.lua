@@ -439,8 +439,12 @@ function ns.Build_options(panel, tab)
         function() return not ns.DB.noQuestXP end,
         function(v) ns.DB.noQuestXP = not v or nil end)
 
+    check(RIGHT_X, -170, L["Lead me to zone crossings"],
+        L["If the way into another zone leads through a crossing off the straight line, the arrow points to the crossing first. Needs “Walk around mountains”."],
+        function() return not ns.DB.noGateHop end,
+        function(v) ns.DB.noGateHop = not v or nil; ns.Refresh() end)
     local bCross = ns.CreateButton(panel, L["Export zone crossings"], 240, function() ns.ShowCrossings() end)
-    bCross:SetPoint("TOPLEFT", RIGHT_X + 2, -172)
+    bCross:SetPoint("TOPLEFT", 4, -388)
     ns.SetTooltip(bCross, L["Export zone crossings"],
         L["Shows the zone crossings Roadbook has seen while you played, as text to copy and pass on. Also: /rb crossings"])
 

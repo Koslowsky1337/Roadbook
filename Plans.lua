@@ -1594,6 +1594,13 @@ local function travelInfo(step, hop, cost, saves)
         tr.text = (L["Tip: ask %s for a portal to %s%s"]):format(hop.who, hop.name, spare)
     elseif hop.kind == "ruf" then
         tr.text = (L["Tip: ask %s for a summon%s"]):format(hop.who, spare)
+    elseif hop.kind == "tor" then
+        local w = nodeMapPos(hop.pos)
+        if not w then return nil end
+        local zone = placeName(hop.to)
+        tr.text = (L["First to the crossing into %s"]):format(zone)
+        tr.arrive = (L["Crossing into %s reached."]):format(zone)
+        tr.waypoint = { map = w.map, x = w.x, y = w.y, title = L["Crossing"], text = zone }
     elseif hop.kind == "flug" then
         local w = nodeMapPos(hop.from)
         if not w then return nil end
@@ -1667,6 +1674,20 @@ function ns.ComputeTravel(step)
     if not hop and walk then
         local node, extra = pickupNode(from, to)
         if node then hop, best = { kind = "neu", node = node, extra = extra }, walk + extra end
+    end
+    -- Zu Fuß in ein anderes Gebiet: liegt der Übergang abseits der geraden Linie, zeigt der Pfeil
+    -- erst dorthin. Bist du dort (oder führt der gerade Weg ohnehin durch), bleibt er auf dem Ziel.
+    if not hop and walk and not ns.DB.noGateHop and ns.FirstGate then
+        local gate, len = ns.FirstGate(from, to)
+        if gate then
+            local sig = ("tor:%d>%d:%d:%d"):format(gate.from, gate.to, gate.pos.x, gate.pos.y)
+            local near = dist(from, gate.pos)
+            if near < 60 then ns.wp.gatePassed = sig elseif near > 600 and ns.wp.gatePassed == sig then ns.wp.gatePassed = nil end
+            local same = cur and cur.sig == sig
+            if ns.wp.gatePassed ~= sig and len - dist(from, to) > (same and 30 or 150) then
+                hop = { kind = "tor", sig = sig, pos = gate.pos, to = gate.to }
+            end
+        end
     end
     -- Teleport, Ruhestein, Portal oder Beschwörung: nur, wenn es die Mindestersparnis bringt
     local saves = walk and (walk - best) or nil
@@ -2289,7 +2310,11 @@ local function buildGates()
     for _, s in ipairs(ns.CROSSINGS) do
         local pos = ns.WorldPos(s[1], s[2], s[3])
         -- Kartendaten kommen evtl. später: dann in einer halben Minute neu aufbauen
-        if pos then add(s[1], s[4], pos) else g.retry = GetTime() + 30 end
+        if pos then
+            add(s[1], s[4], { c = pos.c, x = pos.x, y = pos.y, map = s[1], mx = s[2], my = s[3] })
+        else
+            g.retry = GetTime() + 30
+        end
     end
     for key, obs in pairs(ns.DB and type(ns.DB.gates) == "table" and ns.DB.gates or {}) do
         local from, to = tostring(key):match("^(%d+)>(%d+)$")
@@ -2347,7 +2372,7 @@ local function gateLen(a, b)
     if not g or (g.retry and GetTime() > g.retry) then g = buildGates() end
     local out, inn = g.byMap[za], g.into[zb]
     if not (out and inn) then return nil end
-    local best
+    local best, gate
     for _, i in ipairs(out) do
         local n = g.list[i]
         if n.pos.c == a.c then
@@ -2356,18 +2381,25 @@ local function gateLen(a, b)
                 local d = D[j]
                 if d then
                     d = first + d + dist(g.list[j].pos, b)
-                    if not best or d < best then best = d end
+                    if not best or d < best then best, gate = d, n end
                 end
             end
         end
     end
-    return best
+    return best, gate
+end
+
+-- Der erste Übergang auf dem Fußweg von a nach b (nil: gleiches Gebiet oder unbekannt), dazu die Weglänge
+function ns.FirstGate(a, b)
+    if (ns.DB and ns.DB.noTerrain) or a.c ~= b.c then return nil end
+    local len, gate = gateLen(a, b)
+    return gate, len
 end
 
 -- Weglänge zu Fuß: zwischen Gebieten über die Übergänge, sonst über das Geländeraster; nil = Luftlinie
 function ns.WalkLen(a, b)
     if (ns.DB and ns.DB.noTerrain) or a.c ~= b.c then return nil end
-    return gateLen(a, b) or ns.GridLen(a, b)
+    return (gateLen(a, b)) or ns.GridLen(a, b)
 end
 
 -- Ein zu Fuß beobachteter Gebietswechsel: merken und mit dem Startbestand abgleichen

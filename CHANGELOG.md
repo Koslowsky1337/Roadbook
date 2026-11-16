@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Walks between zones now go through the zone crossings (passes, gates, bridges) instead of anywhere along the border. The starting list comes from Leatrix Maps; Roadbook checks it against the spots where you actually change zones on foot, corrects listed crossings and learns missing ones (shared by all your characters). `/rb crossings` or the button in the options shows the crossings you have seen as text to pass on.
+- Walks between zones now go through the zone crossings (passes, gates, bridges) instead of anywhere along the border. The starting list comes from Leatrix Maps; Roadbook checks it against the spots where you actually change zones on foot, corrects listed crossings and learns missing ones (shared by all your characters). If a crossing lies off the straight line, the TomTom arrow and the tracker lead you to it first (can be switched off). `/rb crossings` or the button in the options shows the crossings you have seen as text to pass on.
 
 ## 1.4.0
 
