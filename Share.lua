@@ -439,6 +439,11 @@ function ns.Build_options(panel, tab)
         function() return not ns.DB.noQuestXP end,
         function(v) ns.DB.noQuestXP = not v or nil end)
 
+    local bCross = ns.CreateButton(panel, L["Export zone crossings"], 240, function() ns.ShowCrossings() end)
+    bCross:SetPoint("TOPLEFT", RIGHT_X + 2, -172)
+    ns.SetTooltip(bCross, L["Export zone crossings"],
+        L["Shows the zone crossings Roadbook has seen while you played, as text to copy and pass on. Also: /rb crossings"])
+
     -- unten über die ganze Breite: Flüge
     title(4, -184, L["Flights"])
     check(2, -202, L["Announce undiscovered flight masters in chat"],

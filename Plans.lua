@@ -2400,6 +2400,51 @@ function ns.LearnCrossing(from, to, pos)
     end
 end
 
+-- Alle beobachteten Übergänge als Text zum Weitergeben (/rb crossings). Eine Zeile je Übergang
+-- im Format von ns.CROSSINGS: { Karte, x, y, Zielkarte }, dahinter der Abstand zum Listenwert.
+function ns.CrossingsText()
+    local lines, keys = {}, {}
+    for key in pairs(type(ns.DB.gates) == "table" and ns.DB.gates or {}) do keys[#keys + 1] = key end
+    table.sort(keys)
+    for _, key in ipairs(keys) do
+        local from, to = key:match("^(%d+)>(%d+)$")
+        from, to = tonumber(from), tonumber(to)
+        for _, o in ipairs(from and ns.DB.gates[key] or {}) do
+            local near
+            for _, s in ipairs(ns.CROSSINGS) do
+                if s[1] == from and s[4] == to then
+                    local p = ns.WorldPos(s[1], s[2], s[3])
+                    local d = p and p.c == o.c and dist(p, o)
+                    if d and (not near or d < near) then near = d end
+                end
+            end
+            local note = near and ("%d yd from the list"):format(near) or "not in the list"
+            local x, y
+            if C_Map and C_Map.GetMapPosFromWorldPos and CreateVector2D then
+                local ok, _, pos = pcall(C_Map.GetMapPosFromWorldPos, o.c, CreateVector2D(o.x, o.y), from)
+                if ok then x, y = vecXY(pos) end
+            end
+            if x and y then
+                lines[#lines + 1] = ("{ %d, %.1f, %.1f, %d }, -- %s"):format(from, x * 100, y * 100, to, note)
+            else
+                lines[#lines + 1] = ("-- %d > %d at world %d: %d, %d (%s)"):format(from, to, o.c, o.x, o.y, note)
+            end
+        end
+    end
+    if #lines == 0 then return nil end
+    table.insert(lines, 1, ("-- Roadbook %s: %d zone crossing(s) seen on foot"):format(tostring(ns.VERSION), #lines))
+    return table.concat(lines, "\n")
+end
+
+function ns.ShowCrossings()
+    local text = ns.CrossingsText()
+    if text then
+        ns.ShowCopy(L["Zone crossings you have seen"], text)
+    else
+        ns.Print(L["No zone crossings seen yet. Roadbook notes one whenever you change zones on foot or mounted."])
+    end
+end
+
 -- Alle 2 Sekunden: hat sich das Gebiet geändert, während du selbst unterwegs warst?
 local crossSpot, crossZone
 function ns.CheckCrossing()

@@ -45,6 +45,7 @@ Game version: WoW Forever.
 - `/rb import` · `/rb export` – share plans as text
 - `/rb find <name or category> [in <zone>]` – way to the nearest NPC (vendor, innkeeper, trainer …), optionally in one zone
 - `/rb fm` – waypoint to an undiscovered flight master nearby
+- `/rb crossings` – the zone crossings Roadbook has seen while you played, as text to pass on
 - `/rb options` – settings · `/rb detour <seconds>` – detour worth taking for an undiscovered flight master
 - `/rb note <title>` · `/rb trash` · `/rb tracker` · `/rb minimap`
 - `/rb log` · `/rb debug` · `/rb layout` – for bug reports

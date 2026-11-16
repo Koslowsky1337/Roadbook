@@ -436,6 +436,7 @@ local HELP = {
     L["|cffffffff/rb import|r – import a plan from text · |cffffffff/rb export|r – show the selected plan as text"],
     L["|cffffffff/rb find <name or category> [in <zone>]|r – way to the nearest NPC (vendor, innkeeper, trainer …); without text: open the NPC search"],
     L["|cffffffff/rb fm|r – waypoint to an undiscovered flight master nearby"],
+    L["|cffffffff/rb crossings|r – the zone crossings you have seen, as text to pass on"],
     L["|cffffffff/rb options|r – settings · |cffffffff/rb detour <seconds>|r – detour worth taking for an undiscovered flight master (0 = off)"],
     L["|cffffffff/rb debug|r – detailed log on/off · |cffffffff/rb layout|r – check the open windows for cut-off text"],
 }
@@ -459,7 +460,7 @@ local ALIAS = {
     sortieren = "sort", weg = "route", notiz = "note", neu = "note", new = "note",
     abgabe = "turnin", abgaben = "turnin", hier = "here", papierkorb = "trash",
     flugmeister = "fm", importieren = "import", exportieren = "export",
-    umweg = "detour", optionen = "options", einstellungen = "options", settings = "options",
+    umweg = "detour", ["übergänge"] = "crossings", uebergaenge = "crossings", optionen = "options", einstellungen = "options", settings = "options",
     fotos = "shots", screenshots = "shots", suche = "find", finde = "find", npc = "find", search = "find",
 }
 
@@ -509,6 +510,8 @@ function ns.HandleSlash(msg)
         ns.FindCommand(rest)
     elseif cmd == "fm" then
         ns.WaypointNewTaxi()
+    elseif cmd == "crossings" then
+        ns.ShowCrossings()
     elseif cmd == "detour" then
         if tonumber(rest) then ns.SetPickupMax(tonumber(rest)) end
         ns.Print((L["Detour for an undiscovered flight master: %s"]):format(ns.PickupText()))

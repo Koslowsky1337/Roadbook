@@ -1103,6 +1103,7 @@ do
     MAPINFO[1413], MAPINFO[9500] = { name = "Brachland", mapType = 3 }, { name = "Nebenan", mapType = 3 }
     ns.CROSSINGS = { { 1413, 100, 10, 9500 }, { 9500, 0, 10, 1413 }, { 4711, 5, 5, 1413 } }
     ns.ClearRouteCache(); ns.ResetGates(); ns.DB.gates = nil
+    check(ns.CrossingsText() == nil, "Ohne gesehene Übergänge gibt es nichts zu exportieren")
     local A, B = ns.WorldPos(1413, 90, 90, true), ns.WorldPos(9500, 10, 90, true)
     local len = ns.WalkLen(A, B)
     check(len and math.abs(len - 6450) < 10, "Gebietswechsel nur über den Übergang (800 Yards Luftlinie): " .. tostring(len))
@@ -1128,6 +1129,11 @@ do
     PLAYER = { map = 9500, x = 0.01, y = 0.5 }
     ns.CheckCrossing()
     check(ns.DB.gates and ns.DB.gates["1413>9500"] and #ns.DB.gates["1413>9500"] == 1, "Gebietswechsel zu Fuß wird erkannt")
+    local export = ns.CrossingsText()
+    check(export and export:find("1 zone crossing(s) seen on foot", 1, true) and export:find(", 9500 }, -- ", 1, true)
+          and export:find("yd from the list", 1, true), "Export der gesehenen Übergänge: " .. tostring(export))
+    SlashCmdList["ROADBOOK"]("crossings")
+    check(ns.copyFrame and ns.copyFrame:IsShown(), "/rb crossings öffnet das Kopierfenster")
     PLAYER = { map = 1413, x = 0.2, y = 0.5 }
     ns.CheckCrossing()
     check(ns.DB.gates["9500>1413"] == nil, "Ein Sprung (Teleport) ist kein Übergang")
