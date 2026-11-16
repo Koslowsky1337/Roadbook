@@ -51,6 +51,7 @@ Stand: 14.11.2026. Automatisch geprüft sind: 203 Ablauf-Tests (Deutsch), 11 Tes
 - [ ] Gruppe mit Hexenmeister nahe am Ziel: Tracker schlägt eine Beschwörung vor. Wird die Position des Gruppenmitglieds gelesen (anderes Gebiet)?
 - [ ] Reiter Optionen: neuer Block „Teleports und Portale“ passt ins Fenster, Umweg-Erklärung steht jetzt im Tooltip der +/−-Knöpfe
 - [ ] EP der Abgaben: Zahl im Plan mit den EP vergleichen, die du bei der Abgabe wirklich bekommst – mit und ohne EP-Bonus. Sind Boni schon eingerechnet?
+- [ ] Gelände: `/rb log` zeigt „Terrain map ready: N fields, N ms“ – wie lange dauert es, ruckelt es beim Einloggen? Stimmt die Reihenfolge einer Runde über einen Berg (z. B. Mulgore – Steinkrallengebirge, Brachland – Tausend Nadeln) besser als vorher?
 - [ ] Textsuche trifft auch den Titel: „Portal“, „Reagenz“ – kommen sinnvolle Treffer?
 - [ ] Textsuche zeigt auch Allianz-NPCs und fremde Klassenlehrer, grau mit „(andere Fraktion)“ bzw. „(andere Klasse)“. Optionen → NPC-Suche: beide Haken wirken auf die Kategorien. „/way kopieren“ öffnet das Kopierfenster, und der Befehl funktioniert in TomTom.
 

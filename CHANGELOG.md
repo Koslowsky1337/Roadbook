@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+- Walks are no longer estimated as the straight line through mountains. Roadbook works out from the QuestieDB data (where NPCs and objects exist) which ground is reachable and estimates the way around. Where the data shows no connection, the straight line is used as before. Can be switched off in the options.
+
 ## 1.3.0
 
 - Mages: your teleports are travel legs now. If a teleport gets you there faster, the tracker says so (needs a Rune of Teleportation).

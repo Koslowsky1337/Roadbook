@@ -1061,7 +1061,10 @@ local function runSpeed()
     return (m and m > RUN_SPEED) and m or RUN_SPEED
 end
 
-local function walkTime(a, b) return dist(a, b) * DETOUR / runSpeed() end
+-- Mit Geländekarte (siehe „Gelände“ weiter unten) die Weglänge um Berge herum, sonst die Luftlinie
+local function walkTime(a, b)
+    return (ns.GridLen and ns.GridLen(a, b) or dist(a, b)) * DETOUR / runSpeed()
+end
 
 ---------------------------------------------------------------------------
 -- Flugpunkte: bekannt sind die, die du beim Flugmeister gesehen hast (wird
@@ -1198,10 +1201,14 @@ local function nearTaxi(p)
     if p._near and p._nearVer == ver then return p._near, p._nearNew end
     local all, unknown = taxiNodesFor(p.map)
     local function nearest(list, new)
-        local scored = {}
+        -- erst nach Luftlinie vorsortieren: die Wegsuche übers Gelände nur für die nächsten sechs
+        local air = {}
         for _, n in ipairs(list) do
-            if n.c == p.c then table.insert(scored, { node = n, t = walkTime(p, n), new = new }) end
+            if n.c == p.c then air[#air + 1] = { node = n, d = dist(p, n) } end
         end
+        table.sort(air, function(a, b) return a.d < b.d end)
+        local scored = {}
+        for i = 1, math.min(6, #air) do scored[i] = { node = air[i].node, t = walkTime(p, air[i].node), new = new } end
         table.sort(scored, function(a, b) return a.t < b.t end)
         local out = {}
         for i = 1, math.min(NEAR_TAXI, #scored) do out[i] = scored[i] end
@@ -1634,7 +1641,8 @@ local function pickupNode(from, to)
     local direct = walkTime(from, to)
     local node, least
     for _, n in ipairs(unknown) do
-        if n.c == from.c and n.c == to.c then
+        -- Luftlinie zuerst: nur was grob in Frage kommt, bekommt die Wegsuche übers Gelände
+        if n.c == from.c and n.c == to.c and (dist(from, n) + dist(n, to) - dist(from, to)) * DETOUR / runSpeed() <= limit * 2 then
             local extra = walkTime(from, n) + walkTime(n, to) - direct
             if extra <= limit and (not least or extra < least) then node, least = n, extra end
         end
@@ -1772,6 +1780,7 @@ do
         if acc < 2 then return end
         acc = 0
         if ns.C and ns.Safe then
+            ns.Safe("travel", ns.BuildGrid)
             ns.Safe("travel", ns.CheckRiding)
             ns.Safe("travel", ns.CheckTravel)
             ns.Safe("travel", ns.CheckNewTaxi)
@@ -2023,6 +2032,179 @@ local function areaToUiMap(areaID)
     return zoneMap[areaID]
 end
 ns.AreaToUiMap = areaToUiMap
+
+---------------------------------------------------------------------------
+-- Gelände. Das Spiel sagt Addons nicht, wo Berge stehen. Roadbook leitet es
+-- aus den Daten ab, die da sind: Wo QuestieDB NPCs oder Objekte kennt, kann
+-- man hin. Alle Fundorte kommen in ein Raster (80 Yards je Feld, samt den
+-- Nachbarfeldern, das schließt kleine Lücken). Ein Fußweg ist dann der kürzeste
+-- Weg über bekannte Felder (A*), nicht die Luftlinie quer durchs Gebirge.
+-- Ohne Verbindung, außerhalb des Rasters oder abgeschaltet: Luftlinie wie bisher.
+-- Feste Werte je Gebiet gibt es nicht; es gelten nur diese vier Zahlen für alles.
+---------------------------------------------------------------------------
+local CELL = 80            -- Yards je Rasterfeld
+local GRID_NODES = 4000    -- mehr Felder untersucht die Wegsuche nicht (dann Luftlinie)
+local GRID_CAP = 2.5       -- ein Umweg zählt höchstens als das 2,5-fache der Luftlinie
+local GRID_SLICE = 1500    -- so viele NPCs/Objekte je Durchgang einlesen (kein Ruckeln)
+local grid = { cells = {}, cache = {}, cached = 0 }
+
+local function cellOf(p) return (math.floor(p.x / CELL) + 512) * 2048 + math.floor(p.y / CELL) + 1024 end
+
+function ns.ResetGrid()
+    grid = { cells = {}, cache = {}, cached = 0 }
+end
+
+-- Liest die Fundorte in kleinen Portionen ein; startet einmal, sobald QuestieDB da ist
+function ns.BuildGrid()
+    if grid.started or ns.staging or not (_G.NpcDB and NpcDB.GetAllIds and NpcDB.Get) then return end
+    grid.started = true
+    local my = grid
+    local t0 = debugprofilestop and debugprofilestop() or 0
+    local sources = { NpcDB }
+    if _G.ObjectDB and ObjectDB.GetAllIds and ObjectDB.Get then sources[2] = ObjectDB end
+    local maps, count, s, i, ids = {}, 0, 1, 0, nil
+    -- Karte -> Welt: aus drei Eckpunkten, danach reine Rechnung
+    local function mapFor(area)
+        local m = maps[area]
+        if m == nil then
+            m = false
+            local map = areaToUiMap(area)
+            local o = map and ns.WorldPos(map, 0, 0, true)
+            local ex, ey = map and ns.WorldPos(map, 100, 0, true), map and ns.WorldPos(map, 0, 100, true)
+            if o and ex and ey and o.c == ex.c and o.c == ey.c then
+                m = { c = o.c, x = o.x, y = o.y, xx = (ex.x - o.x) / 100, xy = (ex.y - o.y) / 100,
+                      yx = (ey.x - o.x) / 100, yy = (ey.y - o.y) / 100 }
+                my.cells[o.c] = my.cells[o.c] or {}
+            end
+            maps[area] = m
+        end
+        return m
+    end
+    local function slice()
+        for _ = 1, GRID_SLICE do
+            if not ids then
+                local db = sources[s]
+                if not db then
+                    my.ready = true
+                    ns.taxiVersion = ns.taxiVersion + 1   -- Wege zu den Flugmeistern neu rechnen
+                    ns.Log("I", "route", "Terrain map ready: %d fields, %d ms", count,
+                        debugprofilestop and (debugprofilestop() - t0) or 0)
+                    if ns.ScheduleRefresh then ns.ScheduleRefresh() end
+                    return
+                end
+                local ok, list = pcall(db.GetAllIds)
+                ids, i = ok and type(list) == "table" and list or {}, 0
+            end
+            i = i + 1
+            local id = ids[i]
+            if not id then
+                ids, s = nil, s + 1
+            else
+                local ok, spawns = pcall(sources[s].Get, id, "spawns")
+                if ok and type(spawns) == "table" then
+                    for area, pts in pairs(spawns) do
+                        local m = type(pts) == "table" and mapFor(area)
+                        if m then
+                            local cells = my.cells[m.c]
+                            for _, pt in ipairs(pts) do
+                                local px, py = type(pt) == "table" and tonumber(pt[1]), type(pt) == "table" and tonumber(pt[2])
+                                if px and py and px >= 0 and px <= 100 and py >= 0 and py <= 100 then
+                                    local k = cellOf({ x = m.x + px * m.xx + py * m.yx, y = m.y + px * m.xy + py * m.yy })
+                                    if not cells[k] then count = count + 1 end
+                                    for dk = -2048, 2048, 2048 do
+                                        cells[k + dk - 1], cells[k + dk], cells[k + dk + 1] = true, true, true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        if my == grid then C_Timer.After(0.05, slice) end
+    end
+    slice()
+end
+
+-- Ein bekanntes Feld an oder direkt neben dem Punkt (nil: außerhalb des Rasters)
+local function snap(cells, k)
+    if cells[k] then return k end
+    for r = 1, 2 do
+        for dx = -r, r do
+            for dy = -r, r do
+                local n = k + dx * 2048 + dy
+                if cells[n] then return n end
+            end
+        end
+    end
+end
+
+local STEPS = { { 2048, 1 }, { -2048, 1 }, { 1, 1 }, { -1, 1 },
+                { 2049, 1.4142 }, { 2047, 1.4142 }, { -2047, 1.4142 }, { -2049, 1.4142 } }
+
+-- Weglänge in Yards von a nach b über bekanntes Gelände; nil = Luftlinie nehmen
+function ns.GridLen(a, b)
+    if not grid.ready or (ns.DB and ns.DB.noTerrain) or a.c ~= b.c then return nil end
+    local cells = grid.cells[a.c]
+    if not cells then return nil end
+    local ka, kb = snap(cells, cellOf(a)), snap(cells, cellOf(b))
+    if not (ka and kb) or ka == kb then return nil end
+    local air = dist(a, b)
+    local ck = a.c .. ":" .. ka .. ":" .. kb
+    local hit = grid.cache[ck]
+    if hit == nil then
+        -- A* mit Binär-Heap; Schätzung = Weg auf dem leeren Raster (überschätzt nie)
+        local bx, by = math.floor(kb / 2048), kb % 2048
+        local function h(k)
+            local dx, dy = math.abs(math.floor(k / 2048) - bx), math.abs(k % 2048 - by)
+            return (dx > dy) and (dx + 0.4142 * dy) or (dy + 0.4142 * dx)
+        end
+        local g, hf, hk, n, nodes = { [ka] = 0 }, { h(ka) }, { ka }, 1, 0
+        hit = false
+        while n > 0 and nodes < GRID_NODES do
+            local f, k = hf[1], hk[1]
+            hf[1], hk[1] = hf[n], hk[n]
+            hf[n], hk[n] = nil, nil
+            n = n - 1
+            local i = 1
+            while true do
+                local l, r, m = i * 2, i * 2 + 1, i
+                if l <= n and hf[l] < hf[m] then m = l end
+                if r <= n and hf[r] < hf[m] then m = r end
+                if m == i then break end
+                hf[i], hf[m], hk[i], hk[m] = hf[m], hf[i], hk[m], hk[i]
+                i = m
+            end
+            if k == kb then hit = g[k] * CELL break end
+            if f <= g[k] + h(k) + 1e-6 then   -- sonst veralteter Eintrag
+                nodes = nodes + 1
+                for _, st in ipairs(STEPS) do
+                    local nk = k + st[1]
+                    if cells[nk] then
+                        local ng = g[k] + st[2]
+                        if ng < (g[nk] or math.huge) then
+                            g[nk] = ng
+                            n = n + 1
+                            hf[n], hk[n] = ng + h(nk), nk
+                            local j = n
+                            while j > 1 do
+                                local p = math.floor(j / 2)
+                                if hf[p] <= hf[j] then break end
+                                hf[p], hf[j], hk[p], hk[j] = hf[j], hf[p], hk[j], hk[p]
+                                j = p
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        if grid.cached > 4000 then grid.cache, grid.cached = {}, 0 end
+        grid.cache[ck], grid.cached = hit, grid.cached + 1
+    end
+    if not hit then return nil end
+    -- Rasterwege sind eckig (etwa 4 % zu lang); nie kürzer als die Luftlinie, nie über dem Deckel
+    return math.max(air, math.min(hit * 0.96, air * GRID_CAP))
+end
 
 -- Alle Spawn-Punkte eines Abgabe-Ziels (NPC oder Objekt) als { map, x, y, name }
 local function finisherSpots(questID, faction)

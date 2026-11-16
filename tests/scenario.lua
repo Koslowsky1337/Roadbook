@@ -1069,6 +1069,33 @@ check(ns.QuestXP(6401) == nil and ns.PlanXP(ns.GetPlan("e:p950")) == nil, "EP-An
 ns.DB.noQuestXP = nil
 QS.onQuest[6401], QS.complete[6401], QUEST_XP[6401] = nil, nil, nil
 ns.C.plans["p950"] = nil
+-- Gelände: ein U aus Fundorten, die Luftlinie führt durch die Lücke in der Mitte
+do
+    local oldNpc, oldObj, oldOff = NpcDB, ObjectDB, MAPOFF[1413]
+    MAPOFF[1413] = { 0, 0, 4000 }
+    ns.ClearRouteCache()
+    local pts = {}
+    for v = 10, 90 do
+        pts[#pts + 1] = { 10, v }; pts[#pts + 1] = { 90, v }; pts[#pts + 1] = { v, 10 }
+    end
+    NpcDB = { GetAllIds = function() return { 1 } end, Get = function() return { [17] = pts } end }
+    ObjectDB = { GetAllIds = function() return { 1 } end, Get = function() return { [17] = { { 50, 95 }, { 500, 3 } } } end }
+    local A, B = ns.WorldPos(1413, 10, 90, true), ns.WorldPos(1413, 90, 90, true)
+    check(ns.GridLen(A, B) == nil, "Ohne Geländekarte: Luftlinie")
+    ns.ResetGrid(); ns.BuildGrid(); RunTimers()
+    local len = ns.GridLen(A, B)
+    check(len and len > 2 * 3200 and len <= 2.5 * 3200 + 1, "Weg um das Hindernis herum statt Luftlinie (gedeckelt): " .. tostring(len))
+    local near = ns.GridLen(ns.WorldPos(1413, 10, 90, true), ns.WorldPos(1413, 10, 50, true))
+    check(near and near >= 1600 and near < 1700, "Freie Strecke: etwa die Luftlinie: " .. tostring(near))
+    check(ns.GridLen(A, ns.WorldPos(1413, 50, 95, true)) == nil, "Keine Verbindung im Raster: Luftlinie wie bisher")
+    check(ns.GridLen(A, ns.WorldPos(1413, 50, 50, true)) == nil, "Ziel außerhalb des Rasters: Luftlinie")
+    local before = ns.LegCost(A, B)
+    ns.DB.noTerrain = true
+    check(ns.GridLen(A, B) == nil and ns.LegCost(A, B) < before, "Gelände abgeschaltet: wieder Luftlinie")
+    ns.DB.noTerrain = nil
+    NpcDB, ObjectDB, MAPOFF[1413] = oldNpc, oldObj, oldOff
+    ns.ResetGrid(); ns.ClearRouteCache()
+end
 -- Teleports, Ruhestein, Portale der Gruppe, Beschwörung
 local errBase9 = #ERRORS_FORWARDED
 local function kind() return ns.travel and ns.travel.hop.kind or "-" end

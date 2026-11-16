@@ -398,6 +398,8 @@ L["Each open turn-in shows the XP the game states for the quest; the plan and th
 L["+%d XP · "] = "+%d EP · "
 L["%d XP open in the plan (%d%%)"] = "noch %d EP im Plan (%d%%)"
 L["%d XP open in the plan"] = "noch %d EP im Plan"
+L["Walk around mountains"] = "Um Berge herum laufen"
+L["Roadbook works out from the QuestieDB data where you can walk and estimates walks around mountains and zone borders instead of straight through. Unticked, walks count as the straight line."] = "Roadbook leitet aus den QuestieDB-Daten ab, wo man laufen kann, und schätzt Fußwege um Berge und Gebietsgrenzen herum statt quer hindurch. Ohne Häkchen zählt die Luftlinie."
 L["Detour for undiscovered flight masters"] = "Umweg für unbekannte Flugmeister"
 L["Hearthstone (%s)"] = "Ruhestein (%s)"
 L["First use |cffffffff%s|r%s"] = "Benutze zuerst |cffffffff%s|r%s"
