@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
 
 - Mages: your teleports are travel legs now. If a teleport gets you there faster, the tracker says so (needs a Rune of Teleportation).
 - Hearthstone as a travel leg when it is ready and saves at least 15 minutes (adjustable). Roadbook learns where it leads when you set your home or use the stone once.

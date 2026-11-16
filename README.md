@@ -22,6 +22,7 @@ Roadbook builds a turn-in round from your quest log, sorts it by travel time and
 - **Macro library:** suggested macros can be created, updated, undone and picked up onto the cursor. Suggestions come from a content pack (see below).
 - **English and German** client support.
 - **Teleports, hearthstone, portals, summons:** mages get their teleports as travel legs, everyone the hearthstone when it is ready and saves enough time. A mage with Roadbook shares their portals with the group, so the others get the tip to ask when a portal is worth its rune. A warlock much closer to your destination is suggested for a summon. Each part can be switched off in the options.
+- **Quest XP:** every open turn-in shows its XP; the plan and the tracker show the sum and its share of your level. Skipped steps do not count.
 - **Update notice:** tells you in chat when another Roadbook user in your guild or group has a newer version. Can be switched off in the options.
 - **Lightweight and private:** no bundled libraries. Roadbook only ever sends two things, both invisibly: its version number to guild and group for the update notice, and, for mages, the list of known portals to the group. Both can be switched off. Your data stays in your own SavedVariables.
 
