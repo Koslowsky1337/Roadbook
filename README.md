@@ -22,7 +22,7 @@ Roadbook builds a turn-in round from your quest log, sorts it by travel time and
 - **Macro library:** suggested macros can be created, updated, undone and picked up onto the cursor. Suggestions come from a content pack (see below).
 - **English and German** client support.
 - **Teleports, hearthstone, portals, summons:** mages get their teleports as travel legs, everyone the hearthstone when it is ready and saves enough time. A mage with Roadbook shares their portals with the group, so the others get the tip to ask when a portal is worth its rune. A warlock much closer to your destination is suggested for a summon. Each part can be switched off in the options.
-- **Walks around mountains:** travel times follow the reachable ground worked out from the QuestieDB data, not the straight line through a mountain range.
+- **Walks around mountains:** travel times follow the reachable ground worked out from the QuestieDB data, not the straight line through a mountain range. Between zones the way goes through the zone crossings, which Roadbook verifies and extends as you play.
 - **Quest XP:** every open turn-in shows its XP; the plan and the tracker show the sum and its share of your level. Skipped steps do not count.
 - **Update notice:** tells you in chat when another Roadbook user in your guild or group has a newer version. Can be switched off in the options.
 - **Lightweight and private:** no bundled libraries. Roadbook only ever sends two things, both invisibly: its version number to guild and group for the update notice, and, for mages, the list of known portals to the group. Both can be switched off. Your data stays in your own SavedVariables.
@@ -127,7 +127,7 @@ Roadbook baut aus deinem Questlog eine Abgaberunde, sortiert sie nach Reisezeit 
 
 - Waypoints and arrow: [TomTom](https://www.curseforge.com/wow/addons/tomtom) by Cladhaire (used through its public API, not included).
 - Quest and NPC data: [QuestieDB](https://www.curseforge.com/wow/addons/questiedb) by the Questie team (read at runtime through its API, not included and not copied; see its own license).
-- Boat, zeppelin and tram stops: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; positions of the zeppelin and ship masters from QuestieDB.
+- Boat, zeppelin and tram stops and the starting list of zone crossings: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; positions of the zeppelin and ship masters from QuestieDB.
 
 ## License
 

@@ -1096,6 +1096,51 @@ do
     NpcDB, ObjectDB, MAPOFF[1413] = oldNpc, oldObj, oldOff
     ns.ResetGrid(); ns.ClearRouteCache()
 end
+-- Gebietsübergänge: zwei Gebiete nebeneinander, ein Übergang weit oben
+do
+    local oldSeed, oldOff, oldInfo = ns.CROSSINGS, MAPOFF[1413], MAPINFO[1413]
+    MAPOFF[1413], MAPOFF[9500] = { 0, 0, 4000 }, { 4000, 0, 4000 }
+    MAPINFO[1413], MAPINFO[9500] = { name = "Brachland", mapType = 3 }, { name = "Nebenan", mapType = 3 }
+    ns.CROSSINGS = { { 1413, 100, 10, 9500 }, { 9500, 0, 10, 1413 }, { 4711, 5, 5, 1413 } }
+    ns.ClearRouteCache(); ns.ResetGates(); ns.DB.gates = nil
+    local A, B = ns.WorldPos(1413, 90, 90, true), ns.WorldPos(9500, 10, 90, true)
+    local len = ns.WalkLen(A, B)
+    check(len and math.abs(len - 6450) < 10, "Gebietswechsel nur über den Übergang (800 Yards Luftlinie): " .. tostring(len))
+    check(ns.WalkLen(A, ns.WorldPos(1413, 10, 90, true)) == nil, "Im selben Gebiet zählen Übergänge nicht")
+    ns.DB.noTerrain = true
+    check(ns.WalkLen(A, B) == nil, "Abgeschaltet: Luftlinie")
+    ns.DB.noTerrain = nil
+    -- Abgleich: Beobachtung nah am Startwert ersetzt ihn, weit weg kommt neu dazu
+    ns.LearnCrossing(1413, 9500, { c = 1, x = 4000, y = 500 })
+    local lastLog = ns.DB.log[#ns.DB.log].m
+    check(#ns.DB.gates["1413>9500"] == 1 and lastLog:find("confirmed: 100 yd", 1, true), "Übergang bestätigt, Abstand im Protokoll: " .. lastLog)
+    ns.LearnCrossing(1413, 9500, { c = 1, x = 4000, y = 560 })
+    check(#ns.DB.gates["1413>9500"] == 1, "Dieselbe Stelle wird nicht doppelt gemerkt")
+    local corrected = ns.WalkLen(A, B)
+    check(corrected and corrected < len and corrected > 6000, "Gemessene Stelle ersetzt den Startwert: " .. tostring(corrected))
+    ns.LearnCrossing(1413, 9500, { c = 1, x = 4000, y = 3000 })
+    local short = ns.WalkLen(A, B)
+    check(short and math.abs(short - 1442) < 10, "Neuer Übergang gelernt, Weg wird kürzer: " .. tostring(short))
+    -- Erkennen beim Laufen
+    ns.DB.gates = nil; ns.ResetGates()
+    PLAYER = { map = 1413, x = 0.99, y = 0.5 }
+    ns.CheckCrossing()
+    PLAYER = { map = 9500, x = 0.01, y = 0.5 }
+    ns.CheckCrossing()
+    check(ns.DB.gates and ns.DB.gates["1413>9500"] and #ns.DB.gates["1413>9500"] == 1, "Gebietswechsel zu Fuß wird erkannt")
+    PLAYER = { map = 1413, x = 0.2, y = 0.5 }
+    ns.CheckCrossing()
+    check(ns.DB.gates["9500>1413"] == nil, "Ein Sprung (Teleport) ist kein Übergang")
+    ON_TAXI = true
+    PLAYER = { map = 1413, x = 0.99, y = 0.5 }; ns.CheckCrossing()
+    PLAYER = { map = 9500, x = 0.01, y = 0.6 }; ns.CheckCrossing()
+    ON_TAXI = false
+    check(#ns.DB.gates["1413>9500"] == 1 and ns.DB.gates["9500>1413"] == nil, "Im Flug wird nichts gelernt")
+    PLAYER = { map = 1413, x = 0.576, y = 0.213 }; ns.CheckCrossing()
+    ns.CROSSINGS, MAPOFF[1413], MAPOFF[9500], MAPINFO[1413], MAPINFO[9500] = oldSeed, oldOff, nil, oldInfo, nil
+    ns.DB.gates = nil
+    ns.ResetGates(); ns.ClearRouteCache()
+end
 -- Teleports, Ruhestein, Portale der Gruppe, Beschwörung
 local errBase9 = #ERRORS_FORWARDED
 local function kind() return ns.travel and ns.travel.hop.kind or "-" end

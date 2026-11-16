@@ -446,7 +446,7 @@ function ns.Build_options(panel, tab)
         function() return not ns.DB.quietTaxi end,
         function(v) ns.DB.quietTaxi = not v or nil end)
     check(RIGHT_X, -202, L["Walk around mountains"],
-        L["Roadbook works out from the QuestieDB data where you can walk and estimates walks around mountains and zone borders instead of straight through. Unticked, walks count as the straight line."],
+        L["Roadbook works out from the QuestieDB data where you can walk and estimates walks around mountains instead of straight through. On foot you reach another zone only through its crossings; Roadbook learns more of them as you play. Unticked, walks count as the straight line."],
         function() return not ns.DB.noTerrain end,
         function(v) ns.DB.noTerrain = not v or nil; ns.taxiVersion = ns.taxiVersion + 1; ns.Refresh() end)
     stepper(4, -234, function() return (L["Detour up to: %s"]):format(ns.PickupText()) end,

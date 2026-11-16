@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Walks between zones now go through the zone crossings (passes, gates, bridges) instead of anywhere along the border. The starting list comes from Leatrix Maps; Roadbook checks it against the spots where you actually change zones on foot, corrects listed crossings and learns missing ones (shared by all your characters).
+
 ## 1.4.0
 
 - Walks are no longer estimated as the straight line through mountains. Roadbook works out from the QuestieDB data (where NPCs and objects exist) which ground is reachable and estimates the way around. Where the data shows no connection, the straight line is used as before. Can be switched off in the options.

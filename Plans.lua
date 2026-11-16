@@ -1063,7 +1063,7 @@ end
 
 -- Mit Geländekarte (siehe „Gelände“ weiter unten) die Weglänge um Berge herum, sonst die Luftlinie
 local function walkTime(a, b)
-    return (ns.GridLen and ns.GridLen(a, b) or dist(a, b)) * DETOUR / runSpeed()
+    return (ns.WalkLen and ns.WalkLen(a, b) or dist(a, b)) * DETOUR / runSpeed()
 end
 
 ---------------------------------------------------------------------------
@@ -1781,6 +1781,7 @@ do
         acc = 0
         if ns.C and ns.Safe then
             ns.Safe("travel", ns.BuildGrid)
+            ns.Safe("travel", ns.CheckCrossing)
             ns.Safe("travel", ns.CheckRiding)
             ns.Safe("travel", ns.CheckTravel)
             ns.Safe("travel", ns.CheckNewTaxi)
@@ -2204,6 +2205,212 @@ function ns.GridLen(a, b)
     if not hit then return nil end
     -- Rasterwege sind eckig (etwa 4 % zu lang); nie kürzer als die Luftlinie, nie über dem Deckel
     return math.max(air, math.min(hit * 0.96, air * GRID_CAP))
+end
+
+---------------------------------------------------------------------------
+-- Gebietsübergänge. Zu Fuß wechselt man ein Gebiet nur an seinen Übergängen
+-- (Pässe, Tore, Brücken), nicht irgendwo an der Grenze. Ein Fußweg von einem
+-- Gebiet ins andere läuft deshalb über die Kette der Übergänge dazwischen.
+--
+-- Startbestand: die Übergangs-Pfeile aus Leatrix Maps von Leatrix
+-- (Leatrix_Maps_Icons.lua, Einträge „Arrow“), unverändert übernommen.
+-- Abgleich: Wechselst du zu Fuß das Gebiet, merkt sich Roadbook die Stelle
+-- (RoadbookDB.gates, für alle Charaktere). Liegt sie nah an einem Startwert,
+-- ist er bestätigt und wird durch die gemessene Stelle ersetzt; sonst kommt
+-- sie als neuer Übergang dazu. Das Protokoll nennt jeweils den Abstand.
+--
+-- { Karte, x, y, Zielkarte }
+---------------------------------------------------------------------------
+ns.CROSSINGS = {
+    { 1416, 80.7, 34.2, 1422 }, { 1416, 51.8, 68.8, 1424 }, { 1416, 81.7, 77.5, 1424 }, { 1417, 45.4, 88.9, 1437 },
+    { 1417, 20.9, 30.6, 1424 }, { 1417, 29.6, 67.5, 1417 }, { 1418, 51.1, 14.8, 1432 }, { 1418, 5.3, 61.1, 1427 },
+    { 1419, 52.2, 10.7, 1435 }, { 1420, 83.4, 70.6, 1422 }, { 1420, 61.9, 65, 1458 }, { 1420, 54.9, 72.7, 1421 },
+    { 1421, 66.3, 79.8, 1424 }, { 1421, 67.7, 5, 1420 }, { 1422, 44.1, 87.1, 1416 }, { 1422, 28.6, 57.5, 1420 },
+    { 1422, 69.7, 50.3, 1423 }, { 1422, 65.3, 86.4, 1425 }, { 1423, 11.8, 61.5, 1422 }, { 1424, 84.6, 31.8, 1425 },
+    { 1424, 54.8, 11.3, 1416 }, { 1424, 13.7, 46.2, 1421 }, { 1424, 81, 56.1, 1417 }, { 1424, 75.5, 24.6, 1416 },
+    { 1425, 24.1, 30.4, 1422 }, { 1425, 6.4, 61.5, 1424 }, { 1425, 70.6, 63.7, 1425 }, { 1425, 76.9, 61, 1425 },
+    { 1426, 84.3, 31.1, 1432 }, { 1426, 82.2, 53.5, 1432 }, { 1426, 30.5, 34.5, 1437 }, { 1426, 53.3, 35.1, 1455 },
+    { 1427, 78.5, 17.4, 1432 }, { 1427, 33.6, 79, 1428 }, { 1427, 68.8, 53.9, 1418 }, { 1428, 78.3, 77.8, 1433 },
+    { 1428, 31.9, 50.4, 1427 }, { 1429, 21, 79.6, 1436 }, { 1429, 93.2, 72.3, 1433 }, { 1429, 32.2, 49.7, 1453 },
+    { 1430, 32, 35.3, 1431 }, { 1430, 58.8, 42.2, 1435 }, { 1431, 7.9, 63.8, 1436 }, { 1431, 44.6, 87.9, 1434 },
+    { 1431, 94.2, 10.3, 1433 }, { 1431, 88.4, 40.9, 1430 }, { 1432, 18.4, 83, 1427 }, { 1432, 20.4, 17.4, 1426 },
+    { 1432, 46.8, 76.9, 1418 }, { 1432, 21.5, 66.2, 1426 }, { 1432, 25.4, 10.9, 1437 }, { 1434, 39.2, 6.5, 1431 },
+    { 1435, 3.7, 61.1, 1430 }, { 1435, 33.4, 74.8, 1419 }, { 1436, 62, 17.9, 1429 }, { 1436, 67.9, 62.8, 1431 },
+    { 1437, 51.3, 10.3, 1417 }, { 1437, 56, 70.3, 1432 }, { 1453, 74.5, 92.3, 1429 }, { 1455, 21.9, 77.5, 1426 },
+    { 1458, 66.2, 5.2, 1420 }, { 1411, 35.1, 42.4, 1413 }, { 1411, 45.5, 12.3, 1454 }, { 1412, 64.9, 64, 1413 },
+    { 1412, 38.4, 40.8, 1456 }, { 1412, 39.5, 29.4, 1456 }, { 1412, 42.3, 29.8, 1456 }, { 1412, 35.5, 36, 1456 },
+    { 1413, 41.2, 58.6, 1412 }, { 1413, 49.8, 78.4, 1445 }, { 1413, 44.1, 91.5, 1441 }, { 1413, 36.3, 27.5, 1442 },
+    { 1413, 48.8, 7.1, 1440 }, { 1413, 62.6, 19.2, 1411 }, { 1438, 55.9, 89.7, 1457 }, { 1438, 36.2, 54.4, 1457 },
+    { 1439, 43.3, 94, 1440 }, { 1439, 37.5, 94.8, 1440 }, { 1439, 27.7, 92.9, 1440 }, { 1440, 29.1, 14.8, 1439 },
+    { 1440, 42.3, 71.1, 1442 }, { 1440, 55.8, 30.2, 1448 }, { 1440, 94.2, 47.3, 1447 }, { 1440, 68.6, 86.8, 1413 },
+    { 1440, 20.6, 16.1, 1439 }, { 1440, 9.5, 10.7, 1439 }, { 1441, 74.9, 93.3, 1446 }, { 1441, 8.3, 11.9, 1444 },
+    { 1441, 32.2, 23.9, 1413 }, { 1442, 80.2, 92.4, 1413 }, { 1442, 30.4, 75.4, 1443 }, { 1442, 78.2, 42.8, 1440 },
+    { 1442, 37.9, 67.8, 1442 }, { 1443, 53.4, 5.9, 1442 }, { 1443, 41.6, 94.4, 1444 }, { 1444, 44.9, 7.7, 1443 },
+    { 1444, 88.7, 41.1, 1441 }, { 1445, 30, 47.1, 1413 }, { 1446, 50.6, 24.4, 1441 }, { 1446, 27.1, 57.7, 1449 },
+    { 1447, 10.6, 75.3, 1440 }, { 1448, 65, 8.3, 1452 }, { 1448, 54.5, 89.2, 1440 }, { 1449, 70.5, 78.6, 1446 },
+    { 1449, 29.4, 22.3, 1451 }, { 1450, 35.7, 72.4, 1448 }, { 1451, 82.4, 16, 1449 }, { 1452, 27.9, 34.5, 1448 },
+    { 1454, 52.4, 83.7, 1411 }, { 1454, 18.1, 60.6, 1413 }, { 1456, 35.7, 62.8, 1412 }, { 1456, 51.3, 31.3, 1412 },
+    { 1457, 30.3, 41.4, 1438 }, { 1457, 86.9, 35.8, 1438 },
+}
+local GATE_NEAR = 300   -- Yards: so nah an einem bekannten Übergang ist eine Beobachtung derselbe Übergang
+local gates             -- { list = { { from, to, pos, seen } }, byMap, into, D }
+
+function ns.ResetGates() gates = nil end
+
+local ZONE_TYPE = (Enum and Enum.UIMapType and Enum.UIMapType.Zone) or 3
+local function isZone(map)
+    local info = map and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(map)
+    return info and info.mapType == ZONE_TYPE or false
+end
+
+-- Gebietskarte eines Punkts (nil: unbekannt, dann gilt die Schätzung ohne Übergänge)
+local function zoneOf(p)
+    if p._zone ~= nil then return p._zone or nil end
+    local z = isZone(p.map) and p.map or nil
+    if not z and C_Map and C_Map.GetMapPosFromWorldPos and CreateVector2D then
+        local ok, map = pcall(C_Map.GetMapPosFromWorldPos, p.c, CreateVector2D(p.x, p.y))
+        map = ok and num(map) or nil
+        if isZone(map) then z = map end
+    end
+    p._zone = z or false
+    return z
+end
+
+local function buildGates()
+    local g = { list = {}, byMap = {}, into = {}, D = {} }
+    local function add(from, to, pos, seen)
+        local i = #g.list + 1
+        g.list[i] = { from = from, to = to, pos = pos, seen = seen }
+        g.byMap[from] = g.byMap[from] or {}
+        table.insert(g.byMap[from], i)
+        g.into[to] = g.into[to] or {}
+        table.insert(g.into[to], i)
+    end
+    for _, s in ipairs(ns.CROSSINGS) do
+        local pos = ns.WorldPos(s[1], s[2], s[3])
+        -- Kartendaten kommen evtl. später: dann in einer halben Minute neu aufbauen
+        if pos then add(s[1], s[4], pos) else g.retry = GetTime() + 30 end
+    end
+    for key, obs in pairs(ns.DB and type(ns.DB.gates) == "table" and ns.DB.gates or {}) do
+        local from, to = tostring(key):match("^(%d+)>(%d+)$")
+        from, to = tonumber(from), tonumber(to)
+        for _, o in ipairs(from and type(obs) == "table" and obs or {}) do
+            local best, bd
+            for _, i in ipairs(g.byMap[from] or {}) do
+                local n = g.list[i]
+                if n.to == to and not n.seen and n.pos.c == o.c then
+                    local d = dist(n.pos, o)
+                    if d < GATE_NEAR and (not bd or d < bd) then best, bd = n, d end
+                end
+            end
+            if best then
+                best.pos, best.seen = { c = o.c, x = o.x, y = o.y }, true
+            else
+                add(from, to, { c = o.c, x = o.x, y = o.y }, true)
+            end
+        end
+    end
+    gates = g
+    return g
+end
+
+-- Kürzeste Fußwege ab „Übergang i durchschritten“ zu allen anderen Übergängen
+local function gateDist(g, i)
+    local D = g.D[i]
+    if D then return D end
+    D = { [i] = 0 }
+    local done = {}
+    while true do
+        local k, kd
+        for j, d in pairs(D) do
+            if not done[j] and (not kd or d < kd) then k, kd = j, d end
+        end
+        if not k then break end
+        done[k] = true
+        local n = g.list[k]
+        for _, j in ipairs(g.byMap[n.to] or {}) do
+            local m = g.list[j]
+            if not done[j] and m.pos.c == n.pos.c then
+                local d = kd + dist(n.pos, m.pos)
+                if not D[j] or d < D[j] then D[j] = d end
+            end
+        end
+    end
+    g.D[i] = D
+    return D
+end
+
+local function gateLen(a, b)
+    local za, zb = zoneOf(a), zoneOf(b)
+    if not (za and zb) or za == zb then return nil end
+    local g = gates
+    if not g or (g.retry and GetTime() > g.retry) then g = buildGates() end
+    local out, inn = g.byMap[za], g.into[zb]
+    if not (out and inn) then return nil end
+    local best
+    for _, i in ipairs(out) do
+        local n = g.list[i]
+        if n.pos.c == a.c then
+            local D, first = gateDist(g, i), dist(a, n.pos)
+            for _, j in ipairs(inn) do
+                local d = D[j]
+                if d then
+                    d = first + d + dist(g.list[j].pos, b)
+                    if not best or d < best then best = d end
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- Weglänge zu Fuß: zwischen Gebieten über die Übergänge, sonst über das Geländeraster; nil = Luftlinie
+function ns.WalkLen(a, b)
+    if (ns.DB and ns.DB.noTerrain) or a.c ~= b.c then return nil end
+    return gateLen(a, b) or ns.GridLen(a, b)
+end
+
+-- Ein zu Fuß beobachteter Gebietswechsel: merken und mit dem Startbestand abgleichen
+function ns.LearnCrossing(from, to, pos)
+    ns.DB.gates = type(ns.DB.gates) == "table" and ns.DB.gates or {}
+    local key = from .. ">" .. to
+    local list = type(ns.DB.gates[key]) == "table" and ns.DB.gates[key] or {}
+    for _, o in ipairs(list) do
+        if o.c == pos.c and dist(o, pos) < GATE_NEAR then return end   -- kennen wir schon
+    end
+    local near
+    for _, s in ipairs(ns.CROSSINGS) do
+        if s[1] == from and s[4] == to then
+            local p = ns.WorldPos(s[1], s[2], s[3])
+            local d = p and p.c == pos.c and dist(p, pos)
+            if d and (not near or d < near) then near = d end
+        end
+    end
+    if #list >= 6 then table.remove(list, 1) end
+    list[#list + 1] = { c = pos.c, x = math.floor(pos.x + 0.5), y = math.floor(pos.y + 0.5) }
+    ns.DB.gates[key] = list
+    gates = nil
+    ns.taxiVersion = ns.taxiVersion + 1
+    if near and near < GATE_NEAR then
+        ns.Log("I", "route", "Zone crossing %d > %d confirmed: %d yd from the listed spot.", from, to, near)
+    elseif near then
+        ns.Log("I", "route", "Zone crossing %d > %d seen %d yd away from the listed spot – added as a new one.", from, to, near)
+    else
+        ns.Log("I", "route", "Zone crossing %d > %d was not listed – learned.", from, to)
+    end
+end
+
+-- Alle 2 Sekunden: hat sich das Gebiet geändert, während du selbst unterwegs warst?
+local crossSpot, crossZone
+function ns.CheckCrossing()
+    if ns.staging then return end
+    local here = ns.PlayerPos()
+    local zone = here and isZone(here.map) and here.map or nil
+    if zone and crossZone and zone ~= crossZone and crossSpot and here.c == crossSpot.c and dist(here, crossSpot) < 200
+       and not (UnitOnTaxi and UnitOnTaxi("player")) and not ns.wp.riding then
+        ns.LearnCrossing(crossZone, zone, here)
+    end
+    crossSpot, crossZone = here, zone
 end
 
 -- Alle Spawn-Punkte eines Abgabe-Ziels (NPC oder Objekt) als { map, x, y, name }
