@@ -1134,6 +1134,30 @@ do
     ns.SetFlightPaths({})
     ns.taxiVersion = ns.taxiVersion + 1
 end
+-- Berufe: nächste Stufe und was sie verlangt
+do
+    local hint = ns.RankHint(cat("tailoring"), 150, 150)
+    check(hint == "Nächste Stufe (bis 225): ab Fertigkeit 125 und Stufe 20, kostet 50 Silber. Lehrer dafür stehen oben.", "Hinweis zur nächsten Stufe: " .. tostring(hint))
+    hint = ns.RankHint(cat("tailoring"), 110, 150)
+    check(hint and hint:find("Noch nicht möglich: deine Fertigkeit ist 110", 1, true), "Zu wenig Fertigkeit wird genannt: " .. tostring(hint))
+    local realLevel = UnitLevel
+    UnitLevel = function() return 18 end
+    hint = ns.RankHint(cat("tailoring"), 150, 150)
+    check(hint and hint:find("du bist Stufe 18", 1, true), "Zu niedrige Stufe wird genannt")
+    hint = ns.RankHint(cat("mining"), 150, 150)
+    check(hint and not hint:find("Stufe 20", 1, true) and not hint:find("Noch nicht", 1, true), "Sammelberufe brauchen keine Charakterstufe: " .. tostring(hint))
+    UnitLevel = realLevel
+    check(ns.RankHint(cat("tailoring"), 240, 225):find("bis 300", 1, true) and ns.RankHint(cat("tailoring"), 280, 300) == nil
+          and ns.RankHint(cat("tailoring"), nil, nil) == nil, "Fachmann als nächste Stufe; bei 300 und ohne Beruf kein Hinweis")
+    check(ns.RankHint(cat("fishing"), 150, 150):find("aus einem Buch", 1, true) and ns.RankHint(cat("cooking"), 225, 225):find("durch eine Quest", 1, true),
+          "Kochen, Angeln, Erste Hilfe: Buch und Quest")
+    -- Verzauberkunst: der „Expert Enchanter“ lehrt nur bis 150, der „Artisan Enchanter“ bis 225
+    SKILLS = { { name = "Verzauberkunst", rank = 150, max = 150, line = 333 } }
+    local en = ns.FindNpcs({ cat = cat("enchanting") })
+    check(en and #en == 2 and en[1].name == "Verzauberin" and en[1].cap == 225 and en[2].cap == 150 and en[2].low,
+          "Verzauberkunst um eine Stufe versetzt: " .. tostring(en and en[1].name) .. " " .. tostring(en and en[1].cap))
+    SKILLS = {}
+end
 -- EP der Abgaben
 ns.C.plans["p950"] = { id = "p950", title = "EP", mode = "route", created = 10, steps = {
     { type = "turnin", quest = 6401, map = 1413, x = 50, y = 50, title = "Abgabe" },

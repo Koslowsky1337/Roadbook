@@ -129,6 +129,7 @@ Roadbook baut aus deinem Questlog eine Abgaberunde, sortiert sie nach Reisezeit 
 - Waypoints and arrow: [TomTom](https://www.curseforge.com/wow/addons/tomtom) by Cladhaire (used through its public API, not included).
 - Quest and NPC data: [QuestieDB](https://www.curseforge.com/wow/addons/questiedb) by the Questie team (read at runtime through its API, not included and not copied; see its own license).
 - Boat, zeppelin and airship stops and the flight paths with their real lengths: taken from [OpenMap](https://github.com/openmap-world/openmap) by the OpenMap contributors (MIT license, see `LICENSES/OpenMap.txt`).
+- Requirements of the profession ranks (skill, level, cost): taken from [What's Training?](https://www.curseforge.com/wow/addons/whats-training) (MIT license, see `LICENSES/WhatsTraining.txt`).
 - Starting list of zone crossings: taken from [Leatrix Maps](https://www.curseforge.com/wow/addons/leatrix-maps) by Leatrix; Roadbook replaces each entry with the spot measured while you play.
 
 ## License

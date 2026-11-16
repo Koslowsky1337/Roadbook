@@ -38,12 +38,12 @@ local CATS = {
     { head = L["Professions"] },
     { key = "alchemy", label = L["Alchemy"], flag = TRAINER, titles = { "alchem" }, skill = 171 },
     { key = "blacksmithing", label = L["Blacksmithing"], flag = TRAINER, titles = { "blacksmith", "armor crafter", "weapon crafter", "armorsmith", "weaponsmith" }, skill = 164 },
-    { key = "enchanting", label = L["Enchanting"], flag = TRAINER, titles = { "enchant" }, skill = 333 },
+    { key = "enchanting", label = L["Enchanting"], flag = TRAINER, titles = { "enchant" }, skill = 333, shift = 1 },
     { key = "engineering", label = L["Engineering"], flag = TRAINER, titles = { "engineer" }, skill = 202 },
-    { key = "herbalism", label = L["Herbalism"], flag = TRAINER, titles = { "herbalis" }, skill = 182 },
+    { key = "herbalism", label = L["Herbalism"], flag = TRAINER, titles = { "herbalis" }, skill = 182, anyLevel = true },
     { key = "leatherworking", label = L["Leatherworking"], flag = TRAINER, titles = { "leatherwork", "leathercraft" }, skill = 165 },
-    { key = "mining", label = L["Mining"], flag = TRAINER, titles = { "miner", "mining" }, skill = 186 },
-    { key = "skinning", label = L["Skinning"], flag = TRAINER, titles = { "skinn" }, skill = 393 },
+    { key = "mining", label = L["Mining"], flag = TRAINER, titles = { "miner", "mining" }, skill = 186, anyLevel = true },
+    { key = "skinning", label = L["Skinning"], flag = TRAINER, titles = { "skinn" }, skill = 393, anyLevel = true },
     { key = "tailoring", label = L["Tailoring"], flag = TRAINER, titles = { "tailor" }, skill = 197 },
     { key = "cooking", label = L["Cooking"], flag = TRAINER, titles = { "cook", "butcher" }, skill = 185, plain = 150, book = 16072, quest = { H = 6610, A = 6610 } },
     { key = "firstaid", label = L["First Aid"], flag = TRAINER, titles = { "first aid", "physician", "surgeon", "medic" }, skill = 129, plain = 150, book = 16084, quest = { H = 6622, A = 6624 } },
@@ -205,15 +205,60 @@ end
 
 -- Bis zu welchem Wert lehrt ein Berufslehrer? Steht im englischen Grundtitel
 -- („Journeyman Tailor“, „Expert Alchemist“ …); nil, wenn der Titel nichts sagt.
-local CAPS = { { "apprentice", 75 }, { "junior", 75 }, { "journeyman", 150 }, { "expert", 225 },
-               { "artisan", 300 }, { "master", 300 }, { "superior", 300 } }
+-- Stufen: 1 Lehrling (75), 2 Geselle (150), 3 Experte (225), 4 Fachmann (300), 5 Meister.
+-- Bei den meisten Berufen lehrt ein „Expert …“ bis 225. Verzauberkunst ist um eine Stufe
+-- versetzt (cat.shift): der „Expert Enchanter“ der Hauptstädte lehrt nur bis 150, Experte gibt
+-- es beim „Artisan Enchanter“, Fachmann beim „Master Enchanter“.
+local TIER_CAP = { 75, 150, 225, 300, 300 }
+local CAPS = { { "apprentice", 1 }, { "junior", 1 }, { "journeyman", 2 }, { "expert", 3 },
+               { "artisan", 4 }, { "superior", 4 }, { "master", 5 } }
 local function teachCap(id, cat)
     if not cat.skill then return nil end
     local t = rawTitle(id)
     for _, c in ipairs(CAPS) do
-        if t:find(c[1], 1, true) then return c[2] end
+        if t:find(c[1], 1, true) then return TIER_CAP[math.max(1, c[2] - (cat.shift or 0))] end
     end
     return cat.plain
+end
+
+-- Was die nächste Stufe verlangt: { Höchstwert danach, nötige Fertigkeit, Charakterstufe, Kosten in Kupfer }.
+-- Werte aus WhatsTraining (Crafting/Recipes/Camelot, MIT-Lizenz – siehe LICENSES/WhatsTraining.txt);
+-- Sammelberufe (cat.anyLevel) haben keine Charakterstufe.
+local RANKS = { { 150, 50, 10, 500 }, { 225, 125, 20, 5000 }, { 300, 200, 35, 50000 } }
+
+local function coins(copper)
+    if copper >= 10000 then return (L["%d gold"]):format(copper / 10000) end
+    return (L["%d silver"]):format(copper / 100)
+end
+
+-- Hinweiszeile über der Trefferliste: wo und wie es mit dem eigenen Beruf weitergeht (nil: nichts zu sagen)
+function ns.RankHint(cat, rank, max)
+    if not (cat and cat.skill and rank and max) or max >= 300 then return nil end
+    local text, need, level
+    if cat.book and max == cat.plain then
+        need = 125
+        text = L["Next rank (up to 225): from a book, needs skill 125. The vendors are listed first."]
+    elseif cat.quest and max == 225 then
+        need, level = 225, 35
+        text = L["Next rank (up to 300): from a quest, needs skill 225 and level 35. The quest giver is listed first."]
+    else
+        for _, r in ipairs(RANKS) do
+            if r[1] > max then
+                need, level = r[2], not cat.anyLevel and r[3] or nil
+                text = level
+                    and (L["Next rank (up to %d): needs skill %d and level %d, costs %s. Trainers who teach it are listed first."]):format(r[1], need, level, coins(r[4]))
+                    or (L["Next rank (up to %d): needs skill %d, costs %s. Trainers who teach it are listed first."]):format(r[1], need, coins(r[4]))
+                break
+            end
+        end
+    end
+    if not text then return nil end
+    local lacks = {}
+    if rank < need then lacks[#lacks + 1] = (L["your skill is %d"]):format(rank) end
+    local mine = UnitLevel and tonumber(UnitLevel("player")) or nil
+    if level and mine and mine < level then lacks[#lacks + 1] = (L["you are level %d"]):format(mine) end
+    if #lacks > 0 then text = text .. " |cffff6060" .. (L["Not yet: %s."]):format(table.concat(lacks, ", ")) .. "|r" end
+    return text
 end
 
 -- Passt der NPC nicht zu diesem Charakter? Liefert dann den Grund als Text.
@@ -619,8 +664,15 @@ function ns.Build_search(panel, tab)
     bSearch:SetPoint("LEFT", edit, "RIGHT", 8, 0)
     ns.SetTooltip(bSearch, L["Search"], L["Finds NPCs by a part of their name or title and lists the nearest ones by travel time. With a zone, only NPCs there are listed."])
 
+    -- eigener Beruf: wie es zur nächsten Stufe geht
+    local rankHint = ns.FontString(right, "GameFontHighlightSmall")
+    rankHint:SetPoint("TOPLEFT", 2, -54)
+    rankHint:SetPoint("RIGHT", -2, 0)
+    rankHint:SetJustifyV("TOP")
+    rankHint:SetHeight(24)   -- zwei Zeilen: der Hinweis samt „Noch nicht möglich“ ist lang
+
     local resInset = ns.CreateInset(right)
-    resInset:SetPoint("TOPLEFT", 0, -54)
+    resInset:SetPoint("TOPLEFT", 0, -82)
     resInset:SetPoint("BOTTOMRIGHT", 0, 48)
     local resList = ns.CreateScrollList(resInset, 20, function(parent)
         local row = ns.CreateRow(parent)
@@ -716,6 +768,9 @@ function ns.Build_search(panel, tab)
             row.selected:SetShown(r == selected)
         end)
         emptyText:SetShown(not results)
+        local myRank, myMax = nil, nil
+        if selCat and selCat.skill then myRank, myMax = ns.PlayerSkill(selCat.skill) end
+        rankHint:SetText(ns.RankHint(selCat, myRank, myMax) or "")
         emptyText:SetText(message or L["Pick a category on the left or search for a name or title. A zone lists only the NPCs there."])
 
         local has = selected ~= nil

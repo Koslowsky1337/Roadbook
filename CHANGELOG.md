@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- NPC search, professions: a line above the results says how your profession goes on: which rank is next, the skill and level it needs, what it costs, and if you cannot learn it yet, why.
+- Enchanting trainers showed one rank too many. The “Expert Enchanter” of the capitals teaches up to 150; Expert comes from the “Artisan Enchanter”, Artisan from the “Master Enchanter”.
+
 ## 1.6.1
 
 - Flights are only suggested where a connection really exists: over the flight paths between the flight points you know, and by what the flight map showed at each flight master (reachable or not). Knowing both ends is no longer enough.

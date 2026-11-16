@@ -252,6 +252,8 @@ NpcDB = DB({
     [3009] = { name = "Schneidermeisterin", raw_subName = "Expert Tailor", npcFlags = 16, spawns = { [17] = { { 30, 60 } } } },
     [3010] = { name = "Angler", raw_subName = "Fisherman", npcFlags = 16, spawns = { [17] = { { 57, 21 } } } },
     [3011] = { name = "Allianz-Wirt", npcFlags = 128, friendlyToFaction = "A", spawns = { [406] = { { 40.3, 40.3 } } } },
+    [3013] = { name = "Verzauberer", raw_subName = "Expert Enchanter", npcFlags = 16, spawns = { [17] = { { 56, 24 } } } },
+    [3014] = { name = "Verzauberin", raw_subName = "Artisan Enchanter", npcFlags = 16, spawns = { [17] = { { 30, 62 } } } },
     [3007] = { name = "Händler ohne Ort", npcFlags = 4, spawns = { [2437] = { { -1, -1 } } } },
 })
 ItemDB = DB({ [16083] = { name = "Angelbuch", vendors = { 3002 } } })
