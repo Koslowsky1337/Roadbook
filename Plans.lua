@@ -2151,9 +2151,10 @@ function ns.BuildGrid()
                                 local px, py = type(pt) == "table" and tonumber(pt[1]), type(pt) == "table" and tonumber(pt[2])
                                 if px and py and px >= 0 and px <= 100 and py >= 0 and py <= 100 then
                                     local k = cellOf({ x = m.x + px * m.xx + py * m.yx, y = m.y + px * m.xy + py * m.yy })
-                                    if not cells[k] then count = count + 1 end
                                     for dk = -2048, 2048, 2048 do
-                                        cells[k + dk - 1], cells[k + dk], cells[k + dk + 1] = true, true, true
+                                        for n = k + dk - 1, k + dk + 1 do
+                                            if not cells[n] then cells[n], count = true, count + 1 end
+                                        end
                                     end
                                 end
                             end
